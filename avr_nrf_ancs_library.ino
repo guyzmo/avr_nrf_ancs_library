@@ -1,60 +1,28 @@
-/* Copyright (c) 2014, Nordic Semiconductor ASA
+/*
+ * (c) 2013, Bernard PRATZ <bernard@pratz.net>. All Rights Reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Based on work that is under Copyright (c) 2009 Nordic Semiconductor.
+ * The information contained herein is property of Nordic Semiconductor ASA.
+ * Terms and conditions of usage are described in detail in NORDIC SEMICONDUCTOR
+ * STANDARD SOFTWARE LICENSE AGREEMENT. Licensees are granted free, non-transferable
+ * use of the information. NO WARRANTY of ANY KIND is provided.
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * This heading must NOT be removed from the file.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * $LastChangedRevision$
  */
 
 
-/** @defgroup ble_proximity_template ble_proximity_template
-@{
-@ingroup projects
-@brief Empty project that can be used as a template for new proximity projects.
-
-@details
-This project is a firmware template for new proximity projects.
-The project will run correctly in its current state.
-With this project you have a starting point for adding your own application functionality.
-
-The following instructions describe the steps to be made on the Windows PC:
-
- -# Install the Master Control Panel on your computer. Connect the Master Emulator
-    (nRF2739) and make sure the hardware drivers are installed.
-
--# You can use the nRF proximity app in the Apple iOS app store with this proximity template app
-
-Note: Pin #6 on Arduino -> PAIRING CLEAR pin: Connect to 3.3v to clear the pairing
-
- *
- * Click on the "Serial Monitor" button on the Arduino IDE to reset the Arduino and start the application.
- * The setup() function is called first and is called only once for each reset of the Arduino.
- * The loop() function as the name implies is called in a loop.
- *
- * The setup() and loop() function are called in this way.
- * main()
- *  {
- *   setup();
- *   while(1)
- *   {
- *     loop();
- *   }
- * }
- *
+/** @defgroup avr_nrf_ancs_library.ino
+ @{
+ @ingroup projects
+ @brief This project is an example of use of the ANCS library
+ 
+ @details
+ 
  */
+
+
 
 #define NO_ANCS
 //#define DEBUG1
@@ -585,19 +553,18 @@ void aci_loop()
               // the user action of connecting pin 6 to 3.3v and then followed by a reset.
               //While deleting bonding information delete on the Arduino and on the phone.
               Serial.println(F("phone/Arduino has deleted the bonding/pairing information"));
-               /* debug_println("Pairing/Bonding info cleared from EEPROM.");
+                debug_println("Pairing/Bonding info cleared from EEPROM.");
                 //Address. Value
                 EEPROM.write(0, 0);
                 lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
                 delay(500);
-                lib_aci_radio_reset();*/
+                lib_aci_radio_reset();
             }
               debug_print("Disconnected: ");
               // btle_status == 13 when distant device removes bonding
               debug_println((int)aci_evt->params.disconnected.btle_status, HEX);
-           //change proximity_disconect_evt_rcvd (aci_evt->params.disconnected.btle_status);
           }
-            /*if(ACI_STATUS_ERROR_BOND_REQUIRED == aci_evt->params.disconnected.aci_status) {
+            if(ACI_STATUS_ERROR_BOND_REQUIRED == aci_evt->params.disconnected.aci_status) {
                 debug_println("phone has deleted the bonding/pairing information");
                 //Clear the pairing
                 debug_println("Pairing/Bonding info cleared from EEPROM.");
@@ -606,15 +573,13 @@ void aci_loop()
                 lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
                 delay(500);
                 lib_aci_radio_reset();
-            } else {*/
+            } else {
             
           lib_aci_connect(180/* in seconds */, 0x0100 /* advertising interval 100ms*/);
           Serial.println(F("Using existing bond stored in EEPROM."));
-          Serial.println(F("   To delete the bond stored in EEPROM, connect Pin 6 to 3.3v and Reset."));
-          Serial.println(F("   Make sure that the bond on the phone/PC is deleted as well."));
           Serial.println(F("Advertising started. Connecting."));
-        //}
-            
+        }
+           free_ram();
         }
         else
         {
@@ -935,17 +900,7 @@ void setup(void)
   //The second parameter is for turning debug printing on for the ACI Commands and Events so they be printed on the Serial
   lib_aci_init(&aci_state, false);
   aci_state.bonded = ACI_BOND_STATUS_FAILED;
-pinMode(1, OUTPUT); 
-  pinMode(6, INPUT); //Pin #6 on Arduino -> PAIRING CLEAR pin: Connect to 3.3v to clear the pairing
-  if (0x01 == digitalRead(6))
-  {
-    //Clear the pairing
-    Serial.println(F("Pairing/Bonding info cleared from EEPROM."));
-    Serial.println(F("Remove the wire on Pin 6 and reset the board for normal operation."));
-    //Address. Value
-    EEPROM.write(0, 0xFF);
-    while(1) {};
-  }
+pinMode(1, OUTPUT);
 
   #ifndef NO_ANCS
     Serial.print("ANCS setup: ");
