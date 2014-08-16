@@ -1,7 +1,7 @@
 
 #include <inttypes.h>
-
-#include <services.h>
+#define DEBUG1
+#include <ancs_services.h>
 #include "lib_aci.h"
 
 #define PACK_LITTLE_ENDIAN
@@ -45,6 +45,7 @@ bool ancs_send_buffered_command() {
 
 void ancs_run() {
     if (ancs_send_buffered_command()) {
+        
         ancs_updated = false;
     } else if (!ancs_updated) {
         ancs_updated = true;
@@ -59,11 +60,15 @@ void ancs_init() {
 }
 
 void ancs_get_notification_data(uint32_t uid) {
-    Serial.println(F("[ANCS NS] ancs_get_notification_data("));
+     if (command_send_enable) {
+    Serial.print(F("[ANCS NS] ancs_get_notification_data("));
     Serial.print(uid, DEC);
     Serial.println(F(")"));
     debug2_print(F("[ANCS NS] Buffering commands to get details for notification #"));
     debug2_println(uid, DEC);
+    
+
+    
     uint8_t* buffer;
     buffer = (uint8_t*)malloc(6);
     // 
@@ -106,6 +111,14 @@ void ancs_get_notification_data(uint32_t uid) {
     free(buffer);
     free_ram();
     debug_println(F("[ANCS NS]	ancs_get_notification_data(): end"));
+    debug_print(F("[ANCS NS]	Command Send Enable: "));
+    debug_println(command_send_enable);
+     } else {
+         Serial.print(F("[ANCS NS] ancs_get_notification_data("));
+         Serial.print(uid, DEC);
+         Serial.println(F(")"));
+     }
+    
 }
 
 void ancs_notification_source_parser(const uint8_t* buffer) {

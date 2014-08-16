@@ -15,8 +15,8 @@ typedef struct ancs_parsing_env_t {
     uint8_t* buffer;
     uint8_t  index;
     uint8_t  ahead;
-    uint32_t nid = 0;
-    uint8_t  aid = 0;
+    uint32_t nid;
+    uint8_t  aid;
 } ancs_parsing_env_t;
 
 void ancs_data_source_parser(const uint8_t* buffer);

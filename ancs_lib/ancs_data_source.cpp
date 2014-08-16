@@ -1,6 +1,7 @@
 
 #include <inttypes.h>
-
+#define DEBUG1
+#define DEBUG2
 #define NO_PACK
 #define PACK_LITTLE_ENDIAN
 #include "data_lib/pack_lib.h"
@@ -69,7 +70,8 @@ void ancs_data_source_parser(const uint8_t* buffer) {
                                  (char*)ancs_parsing_env.buffer);
             free(ancs_parsing_env.buffer);
         } else {
-            debug2_println(F("[ANCS DS]  -> Data continuing in next datagram"));
+            debug2_print(F("[ANCS DS]  -> Data continuing in next datagram Len:"));
+            debug2_print(len);
             ancs_parsing_env.buffer = (uint8_t*)malloc(len+1);
             ancs_parsing_env.ahead = len-ANCS_FIRST_DATA_LEN;
             buffer = buffer + ANCS_HEADER_LEN + ANCS_ATTR_REQ_LEN;
@@ -104,7 +106,7 @@ void ancs_data_source_parser(const uint8_t* buffer) {
             debug2_println(F("[ANCS DS] Parsing is over!"));
             Serial.print(F("[ANCS DS] Data received: "));
             Serial.println((char*)ancs_parsing_env.buffer);
-            ancs_cache_attribute(ancs_parsing_env.nid, 
+            ancs_cache_attribute(ancs_parsing_env.nid,
                                  ancs_parsing_env.aid, 
                                  (char*)ancs_parsing_env.buffer);
             free(ancs_parsing_env.buffer);
@@ -183,8 +185,7 @@ void ancs_notification_validation() {
 
 void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer) {
     char* datetime;
-    ancs_notification_t* notif = 
-            ancs_notification_list_pop();
+    ancs_notification_t* notif = ancs_notification_list_get(nid);//ancs_notification_list_pop();
     debug3_print(F("ancs_cache_attribute("));
     debug3_print(nid, DEC);
     debug3_print(F(", 0x"));
@@ -244,7 +245,9 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer) {
             debug_print(F(", Message: "));
             strncpy(notif->title, buffer, TITLE_LEN);
             notif->subtitle[TITLE_LEN] = '\0';
+            ancs_notification_list_remove();
             ancs_notifications_use_hook(notif);
+            free(notif);
             // ncs_notification_validation();
             // ancs_notification_init(notif);
             break;

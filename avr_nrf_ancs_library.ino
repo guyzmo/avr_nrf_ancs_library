@@ -24,7 +24,7 @@
 
 
 
-#define NO_ANCS
+//#define NO_ANCS
 //#define DEBUG1
 //#define DEBUG2
 
@@ -40,7 +40,7 @@
 Put the nRF8001 setup in the RAM of the nRF8001.
 */
 #include <utilities.h>
-#include <services.h>
+#include <ancs_services.h>
 /**
 Include the services_lock.h to put the setup in the OTP memory of the nRF8001.
 This would mean that the setup cannot be changed once put in.
@@ -397,20 +397,20 @@ void aci_loop()
                     lib_aci_set_local_data(&aci_state, PIPE_DEVICE_INFORMATION_HARDWARE_REVISION_STRING_SET,
                                            (uint8_t *)&(aci_evt->params.cmd_rsp.params.get_device_version), sizeof(aci_evt_cmd_rsp_params_get_device_version_t));
                     break;
-                case ACI_CMD_WAKEUP:             debug_print(F("Wake Up"       )); break;
-                case ACI_CMD_SLEEP:              debug_print(F("Sleep"         )); break;
-                case ACI_CMD_GET_DEVICE_VERSION: debug_print(F("Device Version")); break;
-                case ACI_CMD_GET_BATTERY_LEVEL:  debug_print(F("Battery Level" )); break;
-                case ACI_CMD_GET_TEMPERATURE:    debug_print(F("Temperature"   )); break;
-                case ACI_CMD_ECHO:               debug_print(F("Echo"          )); break;
-                case ACI_CMD_BOND:               debug_print(F("Bond"          )); break;
-                case ACI_CMD_CONNECT:            debug_print(F("Connect"       )); break;
-                case ACI_CMD_DISCONNECT:         debug_print(F("Disconnect"    )); break;
-                case ACI_CMD_CHANGE_TIMING:      debug_print(F("Change Timing" )); break;
-                case ACI_CMD_OPEN_REMOTE_PIPE:   debug_print(F("Open Remote Pipe" )); break;
+                case ACI_CMD_WAKEUP:             debug_println(F("Wake Up"       )); break;
+                case ACI_CMD_SLEEP:              debug_println(F("Sleep"         )); break;
+                case ACI_CMD_GET_DEVICE_VERSION: debug_println(F("Device Version")); break;
+                case ACI_CMD_GET_BATTERY_LEVEL:  debug_println(F("Battery Level" )); break;
+                case ACI_CMD_GET_TEMPERATURE:    debug_println(F("Temperature"   )); break;
+                case ACI_CMD_ECHO:               debug_println(F("Echo"          )); break;
+                case ACI_CMD_BOND:               debug_println(F("Bond"          )); break;
+                case ACI_CMD_CONNECT:            debug_println(F("Connect"       )); break;
+                case ACI_CMD_DISCONNECT:         debug_println(F("Disconnect"    )); break;
+                case ACI_CMD_CHANGE_TIMING:      debug_println(F("Change Timing" )); break;
+                case ACI_CMD_OPEN_REMOTE_PIPE:   debug_println(F("Open Remote Pipe" )); break;
                 default:
-                    Serial.print(F("Evt Unk Cmd "));
-                    Serial.print(  aci_evt->params.cmd_rsp.cmd_opcode); //hex(aci_evt->params.cmd_rsp.cmd_opcode);
+                    Serial.print(F("Evt Unk Cmd: "));
+                    Serial.println(  aci_evt->params.cmd_rsp.cmd_opcode); //hex(aci_evt->params.cmd_rsp.cmd_opcode);
             }
         break;
 
@@ -422,7 +422,6 @@ void aci_loop()
         Get the device version of the nRF8001 and store it in the Hardware Revision String
         */
         lib_aci_device_version();
-        
         break;
 
       case ACI_EVT_BOND_STATUS:
@@ -470,9 +469,10 @@ void aci_loop()
         // The pipe will be available only in an encrpyted link to the phone
             if ((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
                 (lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX))) {
+            
           //Note: This may be called multiple times after the Arduino has connected to the right phone
           Serial.println(F("phone Detected."));
-          Serial.println(F("Do more stuff here. when your phone is detected"));
+       
                 
                 // Detection of ANCS pipes
                 if (lib_aci_is_discovery_finished(&aci_state)) {
@@ -687,7 +687,10 @@ void aci_loop()
           Serial.println(F("Already bonded : Advertising started : Waiting to be connected"));
         }
         break;
-
+        default: 
+        Serial.print("Unknown evt code: ");
+        Serial.println(aci_evt->evt_opcode);
+        break;
     }
   }
   else
@@ -722,6 +725,9 @@ void ancs_notifications_remove_hook(ancs_notification_t* notif) {
 }
 
 void ancs_notifications_use_hook(ancs_notification_t* notif) {
+              digitalWrite(1, HIGH); // set the LED on
+           delay(500); // wait for a second
+           digitalWrite(1, LOW); // set the LED off
     Serial.print (F("["));
     if ((notif->flags & ANCS_EVT_FLAG_SILENT) == ANCS_EVT_FLAG_SILENT)
         Serial.print(F("-"));
@@ -888,7 +894,7 @@ void setup(void)
   aci_state.aci_pins.spi_clock_divider      = SPI_CLOCK_DIV8;//SPI_CLOCK_DIV8  = 2MHz SPI speed
                                                              //SPI_CLOCK_DIV16 = 1MHz SPI speed
 
-  aci_state.aci_pins.reset_pin              = 4; //4 for Nordic board, UNUSED for REDBEARLABS
+  aci_state.aci_pins.reset_pin              = UNUSED; //4 for Nordic board, UNUSED for REDBEARLABS
   aci_state.aci_pins.active_pin             = UNUSED;
   aci_state.aci_pins.optional_chip_sel_pin  = UNUSED;
 
@@ -901,7 +907,16 @@ void setup(void)
   lib_aci_init(&aci_state, false);
   aci_state.bonded = ACI_BOND_STATUS_FAILED;
 pinMode(1, OUTPUT);
+  pinMode(6, INPUT); //Pin #6 on Arduino -> PAIRING CLEAR pin: Connect to 3.3v to clear the pairing
+  if (0x01 == digitalRead(6))
+  {
+    //Clear the pairing
+    Serial.println(F("Pairing/Bonding info cleared from EEPROM."));
+    Serial.println(F("Remove the wire on Pin 6 and reset the board for normal operation."));
+    //Address. Value
+    EEPROM.write(0, 0xFF);
 
+  }
   #ifndef NO_ANCS
     Serial.print("ANCS setup: ");
     ancs_init();
