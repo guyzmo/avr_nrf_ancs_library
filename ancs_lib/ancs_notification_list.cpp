@@ -54,20 +54,28 @@ void ancs_notification_list_push(ancs_notification_t* notif) {
     cout << F("First Index: ") << _first_index << F(" Last Index: ") << _last_index << endl;
     return;
 }
-ancs_notification_t* ancs_notification_list_get(uint8_t nid) {
-     cout << F("[ANCS NL] ancs_notification_list_get() - ") << nid << F(" Search [ ") << endl;
-    free_ram();
+ancs_notification_t* ancs_notification_list_get(uint32_t nid) {
+    cout << F("[ANCS NL] ancs_notification_list_get() - ") << endl;
+    Serial.print(nid, DEC);
+    cout << F(" = Search [ ") << endl;
+
         uint8_t idx;
     
     for (uint8_t i=0; i<CACHE_SIZE; ++i) {
         idx = (i + _first_index) % CACHE_SIZE;
-        cout << " " << idx << " ";
-        if (idx == _last_index)
-            break;
+        cout << " " << idx;
+
+        cout << F(":");
+        Serial.print(_notification_buffer[idx]->uid, DEC);
         if (_notification_buffer[idx]->uid == nid) {
-            cout << F("First Index: ") << _first_index << F(" Last Index: ") << _last_index << F(" IDX: ") << idx << endl;
+            cout << F(" = ] ") << endl << F("MATCH! First Index: ") << _first_index << F(" Last Index: ") << _last_index << F(" IDX: ") << idx << endl;
 
             return _notification_buffer[idx];
+        }
+        if (idx == _last_index) {
+            cout << " ~ ]" << endl;
+            
+            break;
         }
     }
     return NULL;

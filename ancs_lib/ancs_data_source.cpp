@@ -1,7 +1,7 @@
 
 #include <inttypes.h>
-#define DEBUG1
-#define DEBUG2
+//#define DEBUG1
+//#define DEBUG2
 #define NO_PACK
 #define PACK_LITTLE_ENDIAN
 #include "data_lib/pack_lib.h"

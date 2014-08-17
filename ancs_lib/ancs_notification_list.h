@@ -14,11 +14,11 @@ extern "C" {
 
 typedef void (*apply_cb)(ancs_notification_t* notif);
 
-#define CACHE_SIZE 5
+#define CACHE_SIZE 10
 
 void ancs_notification_list_init();
 void ancs_notification_list_push(ancs_notification_t* notif);
-ancs_notification_t* ancs_notification_list_get(uint8_t nid);
+ancs_notification_t* ancs_notification_list_get(uint32_t nid);
 ancs_notification_t* ancs_notification_list_pull();
 bool ancs_notification_list_remove();
 ancs_notification_t* ancs_notification_list_pop();
