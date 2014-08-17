@@ -49,7 +49,7 @@ void ancs_run() {
         ancs_updated = false;
     } else if (!ancs_updated) {
         ancs_updated = true;
-        ancs_notification_list_apply(&ancs_notifications_use_hook);
+        //ancs_notification_list_apply(&ancs_notifications_use_hook);
         free_ram();
     }
 }
@@ -263,6 +263,11 @@ void ancs_notification_source_parser(const uint8_t* buffer) {
         case ANCS_EVT_NOTIFICATION_ADDED:
             debug_println(F("ADDED"));
             if (ancs_notification_list_get(nid) == NULL) {
+                
+                ancs_notification_list_push(notif);
+                
+                debug_print(F("Adding notification to cache: "));
+                debug_println(nid);
                 ancs_get_notification_data(nid);
             } else {
                 debug_print(F("Notification already in cache: "));

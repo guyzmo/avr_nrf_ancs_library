@@ -719,7 +719,7 @@ void aci_loop()
 
 #ifndef NO_ANCS
 void ancs_notifications_remove_hook(ancs_notification_t* notif) {
-    Serial.print(F("REMOVED "));
+    Serial.print(F("REMOVED - "));
     Serial.print(F("Notif #"));
     Serial.println( notif->uid );
 }

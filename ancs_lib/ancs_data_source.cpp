@@ -195,6 +195,9 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer) {
     debug3_println(F("')"));
     debug2_print(F("Notif #"));
     debug2_print(nid, DEC);
+    
+    if (notif != NULL) {
+
     switch (aid) {
         case ANCS_NOTIFICATION_ATTRIBUTE_APP_IDENTIFIER:
             debug2_print(F(", App: "));
@@ -245,9 +248,9 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer) {
             debug_print(F(", Message: "));
             strncpy(notif->title, buffer, TITLE_LEN);
             notif->subtitle[TITLE_LEN] = '\0';
-            ancs_notification_list_remove();
+            //ancs_notification_list_remove();
             ancs_notifications_use_hook(notif);
-            free(notif);
+            //free(notif);
             // ncs_notification_validation();
             // ancs_notification_init(notif);
             break;
@@ -255,6 +258,9 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer) {
             debug_print(F(", Attribute unknown 0x"));
             debug_print(aid, HEX);
             debug_print(F(": "));
+    }
+    } else {
+        Serial.println("ERROR: Notification not in the Cache!!!");
     }
     debug_println(buffer);
 }
