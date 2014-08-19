@@ -25,7 +25,7 @@
 
 
 //#define NO_ANCS
-//#define DEBUG1
+#define DEBUG1
 //#define DEBUG2
 
 
@@ -35,6 +35,9 @@
 #include <pack_lib.h>
 #include <aci_setup.h>
 #include <EEPROM.h>
+#include <LiquidCrystal.h>
+#include <LCDKeypad.h>
+LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);
 
 /**
 Put the nRF8001 setup in the RAM of the nRF8001.
@@ -318,7 +321,7 @@ void aci_loop()
             /**
             When the device is in the setup mode
             */
-            Serial.println(F("Evt Device Started: Setup"));
+            debug_println(F("Evt Device Started: Setup"));
             setup_required = true;
             break;
 
@@ -387,7 +390,7 @@ void aci_loop()
                     break;
                 default:
                     Serial.print(": Error ");
-                    Serial.println(aci_evt->params.cmd_rsp.cmd_status);// hex(aci_evt->params.cmd_rsp.cmd_status) << endl;
+                    Serial.println(aci_evt->params.cmd_rsp.cmd_status, HEX);// hex(aci_evt->params.cmd_rsp.cmd_status) << endl;
             }
 
             switch (aci_evt->params.cmd_rsp.cmd_opcode) {
@@ -415,7 +418,7 @@ void aci_loop()
         break;
 
       case ACI_EVT_CONNECTED:
-        Serial.println(F("Evt Connected"));
+        debug_println(F("Evt Connected"));
         aci_state.data_credit_available = aci_state.data_credit_total;
         timing_change_done = false;
         /*
@@ -425,7 +428,8 @@ void aci_loop()
         break;
 
       case ACI_EVT_BOND_STATUS:
-        debug_println(F("Evt Bond Status"));
+        debug_print(F("Evt Bond Status: "));
+            debug_println(aci_evt->params.bond_status.status_code);
         aci_state.bonded = aci_evt->params.bond_status.status_code;
        
         break;
@@ -456,8 +460,11 @@ void aci_loop()
             break;
 
       case ACI_EVT_PIPE_STATUS:
+            print_pipes(aci_evt);
+        debug_println(F("Evt Pipe Status"));
+        debug_println(aci_state.bonded);
       
-        Serial.println(F("Evt Pipe Status"));
+        debug_println(aci_evt->params.bond_status.status_code);
         //Link is encrypted when the PIPE_LINK_LOSS_ALERT_ALERT_LEVEL_RX_ACK_AUTO is available
         if ((false == timing_change_done) &&
           lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX))
@@ -467,11 +474,12 @@ void aci_loop()
           timing_change_done = true;
         }
         // The pipe will be available only in an encrpyted link to the phone
-            if ((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
-                (lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX))) {
+            /*if ((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
+                (lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX))) {*/
+            if (ACI_BOND_STATUS_SUCCESS == aci_state.bonded)  {
             
           //Note: This may be called multiple times after the Arduino has connected to the right phone
-          Serial.println(F("phone Detected."));
+          debug_println(F("phone Detected."));
        
                 
                 // Detection of ANCS pipes
@@ -479,37 +487,37 @@ void aci_loop()
                     debug_println(F(" Service Discovery is over."));
                     // Test ANCS Pipes availability
                     if (!lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_CONTROL_POINT_TX_ACK)) {
-                        Serial.println(F("  -> ANCS Control Point not available."));
+                        debug_println(F("  -> ANCS Control Point not available."));
                     } else {
-                        Serial.println(F("  -> ANCS Control Point available."));
+                        debug_println(F("  -> ANCS Control Point available."));
                         if (!lib_aci_open_remote_pipe(&aci_state, PIPE_ANCS_CONTROL_POINT_TX_ACK)){
-                            Serial.println(F("  -> ANCS Control Point Pipe: Failure opening."));
+                            debug_println(F("  -> ANCS Control Point Pipe: Failure opening."));
                         } else {
-                            Serial.println(F("  -> ANCS Control Point Pipe: Success opening."));
+                            debug_println(F("  -> ANCS Control Point Pipe: Success opening."));
                         }
                     }
                     if (!lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_DATA_SOURCE_RX)) {
-                        Serial.println(F("  -> ANCS Data Source not available."));
+                        debug_println(F("  -> ANCS Data Source not available."));
                     } else {
-                        Serial.println(F("  -> ANCS Data Source available."));
+                        debug_println(F("  -> ANCS Data Source available."));
                         if (!lib_aci_open_remote_pipe(&aci_state, PIPE_ANCS_DATA_SOURCE_RX)){
-                            Serial.println(F("  -> ANCS Data Source Pipe: Failure opening."));
+                            debug_println(F("  -> ANCS Data Source Pipe: Failure opening."));
                         } else {
-                            Serial.println(F("  -> ANCS Data Source Pipe: Success opening."));
+                            debug_println(F("  -> ANCS Data Source Pipe: Success opening."));
                         }
                     }
-                    if (!lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
-                        Serial.println(F("  -> ANCS Notification Source not available."));
+                    if (!lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX_1)) {
+                        debug_println(F("  -> ANCS Notification Source not available."));
                     } else {
-                        Serial.println(F("  -> ANCS Notification Source available."));
-                        if (!lib_aci_open_remote_pipe(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
-                            Serial.println(F("  -> ANCS Notification Source Pipe: Failure opening."));
+                        debug_println(F("  -> ANCS Notification Source available."));
+                        if (!lib_aci_open_remote_pipe(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX_1)) {
+                            debug_println(F("  -> ANCS Notification Source Pipe: Failure opening."));
                         } else {
-                            Serial.println(F("  -> ANCS Notification Source Pipe: Success opening."));
+                            debug_println(F("  -> ANCS Notification Source Pipe: Success opening."));
                         }
                     }
                 } else {
-                    Serial.println(F(" Service Discovery is still going on."));
+                    debug_println(F(" Service Discovery is still going on."));
                 }
                 
 
@@ -518,7 +526,7 @@ void aci_loop()
         break;
 
       case ACI_EVT_TIMING:
-        Serial.println(F("Evt link connection interval changed"));
+        debug_println(F("Evt link connection interval changed"));
         //Disconnect as soon as we are bonded and required pipes are available
         //This is used to store the bonding info on disconnect and then re-connect to verify the bond
         if((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
@@ -531,7 +539,7 @@ void aci_loop()
           break;
 
       case ACI_EVT_DISCONNECTED:
-        Serial.println(F("Evt Disconnected. Link Lost or Advertising timed out"));
+        debug_println(F("Evt Disconnected. Link Lost or Advertising timed out"));
         if (ACI_BOND_STATUS_SUCCESS == aci_state.bonded)
         {
           if (ACI_STATUS_EXTENDED == aci_evt->params.disconnected.aci_status) //Link was disconnected
@@ -543,7 +551,7 @@ void aci_loop()
               // so we can restore the bond information of the nRF8001 in the event of power loss
               if (bond_data_read_store(&aci_state))
               {
-                Serial.println(F("Dynamic Data read and stored successfully"));
+                debug_println(F("Dynamic Data read and stored successfully"));
               }
             }
             if (0x24 == aci_evt->params.disconnected.btle_status)
@@ -552,7 +560,7 @@ void aci_loop()
               //The Arduino stores the bonding information in EEPROM, which is deleted only by
               // the user action of connecting pin 6 to 3.3v and then followed by a reset.
               //While deleting bonding information delete on the Arduino and on the phone.
-              Serial.println(F("phone/Arduino has deleted the bonding/pairing information"));
+              debug_println(F("phone/Arduino has deleted the bonding/pairing information"));
                 debug_println("Pairing/Bonding info cleared from EEPROM.");
                 //Address. Value
                 EEPROM.write(0, 0);
@@ -576,8 +584,8 @@ void aci_loop()
             } else {
             
           lib_aci_connect(180/* in seconds */, 0x0100 /* advertising interval 100ms*/);
-          Serial.println(F("Using existing bond stored in EEPROM."));
-          Serial.println(F("Advertising started. Connecting."));
+          debug_println(F("Using existing bond stored in EEPROM."));
+          debug_println(F("Advertising started. Connecting."));
         }
            free_ram();
         }
@@ -585,14 +593,14 @@ void aci_loop()
         {
           //There is no existing bond. Try to bond.
           lib_aci_bond(180/* in seconds */, 0x0050 /* advertising interval 50ms*/);
-          Serial.println(F("Advertising started. Bonding."));
+          debug_println(F("Advertising started. Bonding."));
         }
         break;
 
       case ACI_EVT_DATA_RECEIVED:
             debug_println("Evt Data Received");
             switch (aci_evt->params.data_received.rx_data.pipe_number) {
-                case PIPE_ANCS_NOTIFICATION_SOURCE_RX:
+                case PIPE_ANCS_NOTIFICATION_SOURCE_RX_1:
 #ifdef NO_ANCS
                     handle_notification(aci_evt->params.data_received.rx_data.aci_data);
 #else
@@ -623,13 +631,15 @@ void aci_loop()
       case ACI_EVT_DATA_CREDIT:
         aci_state.data_credit_available = aci_state.data_credit_available + aci_evt->params.data_credit.credit;
         break;
+        ACI_EVT_DATA_ACK:
+            break;
 
       case ACI_EVT_PIPE_ERROR:
         //See the appendix in the nRF8001 Product Specication for details on the error codes
-        Serial.print(F("ACI Evt Pipe Error: Pipe #:"));
-        Serial.print(aci_evt->params.pipe_error.pipe_number, DEC);
-        Serial.print(F("  Pipe Error Code: 0x"));
-        Serial.println(aci_evt->params.pipe_error.error_code, HEX);
+        debug_print(F("ACI Evt Pipe Error: Pipe #:"));
+        debug_print(aci_evt->params.pipe_error.pipe_number, DEC);
+        debug_print(F("  Pipe Error Code: 0x"));
+        debug_println(aci_evt->params.pipe_error.error_code, HEX);
 
         //Increment the credit available as the data packet was not sent.
         //The pipe error also represents the Attribute protocol Error Response sent from the peer and that should not be counted
@@ -641,14 +651,14 @@ void aci_loop()
         break;
 
       case ACI_EVT_HW_ERROR:
-        Serial.print(F("HW error: "));
-        Serial.println(aci_evt->params.hw_error.line_num, DEC);
+        debug_print(F("HW error: "));
+        debug_println(aci_evt->params.hw_error.line_num, DEC);
 
         for(uint8_t counter = 0; counter <= (aci_evt->len - 3); counter++)
         {
         Serial.write(aci_evt->params.hw_error.file_name[counter]); //uint8_t file_name[20];
         }
-        Serial.println();
+        debug_println();
 
         //Manage the bond in EEPROM of the AVR
         {
@@ -656,18 +666,18 @@ void aci_loop()
           eeprom_status = EEPROM.read(0);
           if (eeprom_status != 0xFF)
           {
-            Serial.println(F("Previous Bond present. Restoring"));
-            Serial.println(F("Using existing bond stored in EEPROM."));
-            Serial.println(F("   To delete the bond stored in EEPROM, connect Pin 6 to 3.3v and Reset."));
-            Serial.println(F("   Make sure that the bond on the phone/PC is deleted as well."));
+            debug_println(F("Previous Bond present. Restoring"));
+            debug_println(F("Using existing bond stored in EEPROM."));
+            debug_println(F("   To delete the bond stored in EEPROM, connect Pin 6 to 3.3v and Reset."));
+            debug_println(F("   Make sure that the bond on the phone/PC is deleted as well."));
             //We must have lost power and restarted and must restore the bonding infromation using the ACI Write Dynamic Data
             if (ACI_STATUS_TRANSACTION_COMPLETE == bond_data_restore(&aci_state, eeprom_status, &bonded_first_time))
             {
-              Serial.println(F("Bond restored successfully"));
+              debug_println(F("Bond restored successfully"));
             }
             else
             {
-              Serial.println(F("Bond restore failed. Delete the bond and try again."));
+              debug_println(F("Bond restore failed. Delete the bond and try again."));
             }
           }
         }
@@ -676,20 +686,20 @@ void aci_loop()
         if (ACI_BOND_STATUS_SUCCESS != aci_state.bonded)
         {
           lib_aci_bond(180/* in seconds */, 0x0050 /* advertising interval 50ms*/);
-          Serial.println(F("No Bond present in EEPROM."));
-          Serial.println(F("Advertising started : Waiting to be connected and bonded"));
+          debug_println(F("No Bond present in EEPROM."));
+          debug_println(F("Advertising started : Waiting to be connected and bonded"));
         }
         else
         {
           //connect to an already bonded device
           //Use lib_aci_direct_connect for faster re-connections with PC, not recommended to use with iOS/OS X
           lib_aci_connect(100/* in seconds */, 0x0020 /* advertising interval 20ms*/);
-          Serial.println(F("Already bonded : Advertising started : Waiting to be connected"));
+          debug_println(F("Already bonded : Advertising started : Waiting to be connected"));
         }
         break;
         default: 
-        Serial.print("Unknown evt code: ");
-        Serial.println(aci_evt->evt_opcode);
+        debug_print("Unknown evt code: ");
+        debug_println(aci_evt->evt_opcode);
         break;
     }
   }
@@ -725,6 +735,8 @@ void ancs_notifications_remove_hook(ancs_notification_t* notif) {
 }
 
 void ancs_notifications_use_hook(ancs_notification_t* notif) {
+  char line1[16];
+  char line2[16];
               digitalWrite(1, HIGH); // set the LED on
            delay(500); // wait for a second
            digitalWrite(1, LOW); // set the LED off
@@ -755,11 +767,22 @@ void ancs_notifications_use_hook(ancs_notification_t* notif) {
             Serial.println(F("other"));
         default:
             Serial.println(F("ignored"));
-            return;
+            Serial.println(notif->category, DEC);
+            break;
+            //return;
     }
     Serial.print(F("   title:    '")); Serial.print( notif->title    ); Serial.println("'");
     Serial.print(F("   subtitle: '")); Serial.print( notif->subtitle ); Serial.println("'");
     Serial.print(F("   message:  '")); Serial.print( notif->message  ); Serial.println("'");
+    strncpy(line1, notif->title, 16);
+     strncpy(line2, notif->message, 16);
+     line1[15] = '\0';
+     line2[15] = '\0';
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print(line1);
+    lcd.setCursor(0,1);
+    lcd.print(line2);
 }
 #else
 void handle_notification(const unsigned char* data) {
@@ -885,8 +908,8 @@ void setup(void)
 
   //Tell the ACI library, the MCU to nRF8001 pin connections
   aci_state.aci_pins.board_name = BOARD_DEFAULT; //See board.h for details
-  aci_state.aci_pins.reqn_pin   = 9;
-  aci_state.aci_pins.rdyn_pin   = 8;
+  aci_state.aci_pins.reqn_pin   = 12;
+  aci_state.aci_pins.rdyn_pin   = 11;
   aci_state.aci_pins.mosi_pin   = MOSI;
   aci_state.aci_pins.miso_pin   = MISO;
   aci_state.aci_pins.sck_pin    = SCK;
@@ -907,6 +930,20 @@ void setup(void)
   lib_aci_init(&aci_state, false);
   aci_state.bonded = ACI_BOND_STATUS_FAILED;
 pinMode(1, OUTPUT);
+    
+    lcd.begin(16, 2);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("     helle! ");
+    lcd.print("      welcome!");
+    lcd.setCursor(0,1);
+    lcd.print("   LinkSprite");
+    lcd.print("    LCD Shield");
+
+    
+    
+    
+   /*
   pinMode(6, INPUT); //Pin #6 on Arduino -> PAIRING CLEAR pin: Connect to 3.3v to clear the pairing
   if (0x01 == digitalRead(6))
   {
@@ -916,7 +953,7 @@ pinMode(1, OUTPUT);
     //Address. Value
     EEPROM.write(0, 0xFF);
 
-  }
+  }*/
   #ifndef NO_ANCS
     Serial.print("ANCS setup: ");
     ancs_init();

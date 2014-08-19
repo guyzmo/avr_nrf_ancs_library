@@ -1,6 +1,6 @@
 
 #include <inttypes.h>
-#define DEBUG1
+//#define DEBUG1
 #include <ancs_services.h>
 #include "lib_aci.h"
 
@@ -254,7 +254,9 @@ void ancs_notification_source_parser(const uint8_t* buffer) {
             debug_println(F(": ignored"));
             return;
 #endif
-        default: return;
+        default:
+            Serial.println(F("UNKOWN CATEGORY"));
+            return;
     }
     debug_print(F("["));
     debug_print(category_count);

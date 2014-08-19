@@ -16,6 +16,8 @@ void ancs_notification_copy(ancs_notification_t* dst,
     debug_println(F("ancs_notification_copy()"));
     dst->uid                = src->uid;
     dst->flags              = src->flags;
+    dst->category           = src->category;
+    dst->action             = src->action;
     strncpy(dst->title,    src->title,    LINE_SIZE+1);
     strncpy(dst->subtitle,    src->subtitle,    LINE_SIZE+1);
     strncpy(dst->message,    src->message,    LINE_SIZE+1);

@@ -2,6 +2,7 @@
 #include <inttypes.h>
 //#define DEBUG1
 //#define DEBUG2
+//#define DEBUG3
 #define NO_PACK
 #define PACK_LITTLE_ENDIAN
 #include "data_lib/pack_lib.h"
@@ -38,6 +39,7 @@ void ancs_data_source_parser(const uint8_t* buffer) {
         unpack(buffer, "BIBH", &cmd, &nid, &aid, &len);
         ancs_parsing_env.nid = nid;
         ancs_parsing_env.aid = aid;
+        ancs_parsing_env.len = len;
         debug2_print(F("[ANCS DS]  -> COMMAND: "));
         debug2_println(cmd, HEX);
         debug2_print(F("[ANCS DS]  -> NOTIFICATION: "));
@@ -61,13 +63,15 @@ void ancs_data_source_parser(const uint8_t* buffer) {
             ancs_parsing_env.buffer[len] = '\0';
             ancs_parsing_env.index = 0;
             ancs_parsing_env.ahead = 0;
+            
             command_send_enable = true;
             debug2_println(F("[ANCS DS] Parsing is over!"));
             Serial.print(F("[ANCS DS] Data received: "));
             Serial.println((char*)ancs_parsing_env.buffer);
             ancs_cache_attribute(ancs_parsing_env.nid, 
                                  ancs_parsing_env.aid, 
-                                 (char*)ancs_parsing_env.buffer);
+                                 (char*)ancs_parsing_env.buffer,
+                                 ancs_parsing_env.len);
             free(ancs_parsing_env.buffer);
         } else {
             debug2_print(F("[ANCS DS]  -> Data continuing in next datagram Len:"));
@@ -108,7 +112,8 @@ void ancs_data_source_parser(const uint8_t* buffer) {
             Serial.println((char*)ancs_parsing_env.buffer);
             ancs_cache_attribute(ancs_parsing_env.nid,
                                  ancs_parsing_env.aid, 
-                                 (char*)ancs_parsing_env.buffer);
+                                 (char*)ancs_parsing_env.buffer,
+                                 ancs_parsing_env.len);
             free(ancs_parsing_env.buffer);
         } else {
             debug2_println(F("[ANCS DS]  -> Data continuing in next datagram"));
@@ -183,7 +188,7 @@ void ancs_notification_validation() {
     // Serial.println(notif->title);
 }
 
-void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer) {
+void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer, uint16_t len) {
     char* datetime;
     ancs_notification_t* notif = ancs_notification_list_get(nid);//ancs_notification_list_pop();
     debug3_print(F("ancs_cache_attribute("));
@@ -193,7 +198,7 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer) {
     debug3_print(F(", '"));
     debug3_print(buffer);
     debug3_println(F("')"));
-    debug2_print(F("Notif #"));
+    debug2_print(F(" Notif #"));
     debug2_print(nid, DEC);
     
     if (notif != NULL) {
@@ -202,12 +207,12 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer) {
         case ANCS_NOTIFICATION_ATTRIBUTE_APP_IDENTIFIER:
             debug2_print(F(", App: "));
             strncpy(notif->app, buffer, strlen(buffer));
-            notif->title[strlen(buffer)] = '\0';
+            //notif->title[strlen(buffer)] = '\0';
             break;
         case ANCS_NOTIFICATION_ATTRIBUTE_TITLE:
             debug2_print(F(", Title: "));
-            strncpy(notif->title, buffer, TITLE_LEN);
-            notif->title[TITLE_LEN] = '\0';
+            strncpy(notif->title, buffer, strlen(buffer));
+            //notif->title[TITLE_LEN] = '\0';
             break;
         case ANCS_NOTIFICATION_ATTRIBUTE_DATE:
             debug_print(F(", Date: "));
@@ -236,18 +241,18 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer) {
             break;
         case ANCS_NOTIFICATION_ATTRIBUTE_MESSAGE_SIZE:
             debug_print(F(", Msglen: "));
-            strncpy(notif->title, buffer, TITLE_LEN);
-            notif->subtitle[TITLE_LEN] = '\0';
+            notif->msg_len = atoi(buffer);
+            //notif->subtitle[TITLE_LEN] = '\0';
             break;
         case ANCS_NOTIFICATION_ATTRIBUTE_SUBTITLE:
-            debug_print(F(", Title: "));
-            strncpy(notif->title, buffer, TITLE_LEN);
-            notif->subtitle[TITLE_LEN] = '\0';
+            debug_print(F(", SubTitle: "));
+            strncpy(notif->subtitle, buffer, strlen(buffer));
+            //notif->subtitle[TITLE_LEN] = '\0';
             break;
         case ANCS_NOTIFICATION_ATTRIBUTE_MESSAGE:
             debug_print(F(", Message: "));
-            strncpy(notif->title, buffer, TITLE_LEN);
-            notif->subtitle[TITLE_LEN] = '\0';
+            strncpy(notif->message, buffer, strlen(buffer));
+            //notif->subtitle[TITLE_LEN] = '\0';
             //ancs_notification_list_remove();
             ancs_notifications_use_hook(notif);
             //free(notif);
