@@ -207,12 +207,10 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer, uint16_
         case ANCS_NOTIFICATION_ATTRIBUTE_APP_IDENTIFIER:
             debug2_print(F(", App: "));
             strncpy(notif->app, buffer, strlen(buffer));
-            //notif->title[strlen(buffer)] = '\0';
             break;
         case ANCS_NOTIFICATION_ATTRIBUTE_TITLE:
             debug2_print(F(", Title: "));
             strncpy(notif->title, buffer, strlen(buffer));
-            //notif->title[TITLE_LEN] = '\0';
             break;
         case ANCS_NOTIFICATION_ATTRIBUTE_DATE:
             debug_print(F(", Date: "));
@@ -242,22 +240,17 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer, uint16_
         case ANCS_NOTIFICATION_ATTRIBUTE_MESSAGE_SIZE:
             debug_print(F(", Msglen: "));
             notif->msg_len = atoi(buffer);
-            //notif->subtitle[TITLE_LEN] = '\0';
             break;
         case ANCS_NOTIFICATION_ATTRIBUTE_SUBTITLE:
             debug_print(F(", SubTitle: "));
             strncpy(notif->subtitle, buffer, strlen(buffer));
-            //notif->subtitle[TITLE_LEN] = '\0';
             break;
         case ANCS_NOTIFICATION_ATTRIBUTE_MESSAGE:
             debug_print(F(", Message: "));
             strncpy(notif->message, buffer, strlen(buffer));
-            //notif->subtitle[TITLE_LEN] = '\0';
-            //ancs_notification_list_remove();
+            ancs_notification_list_remove();
             ancs_notifications_use_hook(notif);
-            //free(notif);
-            // ncs_notification_validation();
-            // ancs_notification_init(notif);
+            free(notif);
             break;
         default:
             debug_print(F(", Attribute unknown 0x"));
@@ -265,7 +258,7 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer, uint16_
             debug_print(F(": "));
     }
     } else {
-        Serial.println("ERROR: Notification not in the Cache!!!");
+        debug_println(F("ERROR: Notification not found in the Cache"));
     }
     debug_println(buffer);
 }
