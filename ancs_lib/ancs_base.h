@@ -8,7 +8,11 @@
 #include <aci.h>
 
 // user definable variable
-#define ANCS_NOTIFICATION_ATTRIBUTE_DATA_SIZE 25
+#define ANCS_NOTIFICATION_ATTRIBUTE_DATA_SIZE 16
+#define TITLE_LEN 16
+#define LINE_SIZE 16
+
+#define CACHE_SIZE 10
 
 ////////////////////////////////////////////////////////////////////////////////////
 #define ANCS_EVT_NOTIFICATION_ADDED     0x0
@@ -46,7 +50,7 @@
 #define ANCS_NOTIFICATION_ATTRIBUTE_DATE           0x5
 // reserved ids up to 0xFF
 
-#define ANCS_NOTIFICATION_APP_ATTRIBUTE_NAME       0x0
+#define ANCS_NOTIFICATION_APP_ID_DISPLAY_NAME       0x0
 // reserved ids up to 0xFF
 
 // Datasource definitions

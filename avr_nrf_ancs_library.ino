@@ -35,6 +35,84 @@
 #include <pack_lib.h>
 #include <aci_setup.h>
 #include <EEPROM.h>
+#include <LiquidCrystal.h>
+#include <LCDKeypad.h>
+
+LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);
+
+// Pins in use
+#define BUTTON_ADC_PIN           A0  // A0 is the button ADC input
+#define LCD_BACKLIGHT_PIN         10  // D10 controls LCD backlight
+// ADC readings expected for the 5 buttons on the ADC input
+#define RIGHT_10BIT_ADC           0  // right
+#define UP_10BIT_ADC            145  // up
+#define DOWN_10BIT_ADC          329  // down
+#define LEFT_10BIT_ADC          505  // left
+#define SELECT_10BIT_ADC        741  // right
+#define BUTTONHYSTERESIS         10  // hysteresis for valid button sensing window
+//return values for ReadButtons()
+#define BUTTON_NONE               0  //
+#define BUTTON_RIGHT              1  //
+#define BUTTON_UP                 2  //
+#define BUTTON_DOWN               3  //
+#define BUTTON_LEFT               4  //
+#define BUTTON_SELECT             5  //
+//some example macros with friendly labels for LCD backlight/pin control, tested and can be swapped into the example code as you like
+#define LCD_BACKLIGHT_OFF()     digitalWrite( LCD_BACKLIGHT_PIN, LOW )
+#define LCD_BACKLIGHT_ON()      digitalWrite( LCD_BACKLIGHT_PIN, HIGH )
+#define LCD_BACKLIGHT(state)    { if( state ){digitalWrite( LCD_BACKLIGHT_PIN, HIGH );}else{digitalWrite( LCD_BACKLIGHT_PIN, LOW );} }
+
+byte connected_char[8] = {
+    B00000,
+    B01110,
+    B10001,
+    B00100,
+    B00100,
+    B00100,
+    B01110,
+};
+
+
+byte disconnected_char[8] = {
+    B10001,
+    B01010,
+    B00100,
+    B01010,
+    B10101,
+    B00100,
+    B01110,
+};
+
+byte text_char[8] = {
+    B00000,
+    B01110,
+    B01110,
+    B01010,
+    B01010,
+    B01110,
+    B00000,
+};
+
+byte email_char[8] = {
+    B00000,
+    B11111,
+    B11011,
+    B10101,
+    B10001,
+    B11111,
+    B00000,
+    
+};
+/*
+byte email_char[8] = {
+    B00000,
+    B00000,
+    B00000,
+    B00000,
+    B00000,
+    B00000,
+    B00000,
+};*/
 
 /**
  Put the nRF8001 setup in the RAM of the nRF8001.
@@ -93,6 +171,12 @@ static bool bonded_first_time = true;
  Timing change state variable
  */
 static bool timing_change_done = false;
+
+char wait = ' ';
+unsigned long last_screen_update = 0;
+unsigned long backlight_started = 0;
+boolean backlight = false;
+boolean connected = false;
 
 void print_pipes(aci_evt_t* aci_evt) {
     Serial.print("Here are the available open pipes: ");
@@ -343,7 +427,7 @@ void aci_loop()
                                     //We must have lost power and restarted and must restore the bonding infromation using the ACI Write Dynamic Data
                                     if (ACI_STATUS_TRANSACTION_COMPLETE == bond_data_restore(&aci_state, eeprom_status, &bonded_first_time))
                                     {
-                                        Serial.println(F("Bond restored successfully"));
+                                        Serial.println(F("Bond information loaded into nRF8001"));
                                     }
                                     else
                                     {
@@ -385,6 +469,9 @@ void aci_loop()
                     case ACI_STATUS_ERROR_REJECTED:
                         debug_println(F(": failed with error 'command rejected'"));
                         break;
+                    case ACI_STATUS_ERROR_DEVICE_STATE_INVALID:
+                        debug_println(F(": Command invalid in the current device state"));
+                        break;
                     default:
                         debug_print(F(": Error "));
                         debug_println(aci_evt->params.cmd_rsp.cmd_status, HEX);
@@ -408,6 +495,8 @@ void aci_loop()
                     case ACI_CMD_DISCONNECT:         debug_println(F("Disconnect"    )); break;
                     case ACI_CMD_CHANGE_TIMING:      debug_println(F("Change Timing" )); break;
                     case ACI_CMD_OPEN_REMOTE_PIPE:   debug_println(F("Open Remote Pipe" )); break;
+                    case ACI_CMD_RADIO_RESET:        debug_println(F("Radio Reset")); break;
+                   
                     default:
                         Serial.print(F("Evt Unk Cmd: "));
                         Serial.println(  aci_evt->params.cmd_rsp.cmd_opcode); //hex(aci_evt->params.cmd_rsp.cmd_opcode);
@@ -421,7 +510,12 @@ void aci_loop()
                 /*
                  Get the device version of the nRF8001 and store it in the Hardware Revision String
                  */
-                lib_aci_device_version();
+                debug_print(F("aci_state.bonded: "));
+                debug_println(aci_state.bonded, HEX);
+                if (lib_aci_is_discovery_finished(&aci_state) && (ACI_BOND_STATUS_SUCCESS != aci_state.bonded)) {
+                    debug_println(F("Upgrading security!"));
+                    lib_aci_bond_request();
+                }
                 break;
                 
             case ACI_EVT_BOND_STATUS:
@@ -455,18 +549,25 @@ void aci_loop()
                 Serial.println("]");
                 
                 break;
-                
+
             case ACI_EVT_PIPE_STATUS:
                 
                 debug_println(F("Evt Pipe Status"));
                 //Link is encrypted when the PIPE_LINK_LOSS_ALERT_ALERT_LEVEL_RX_ACK_AUTO is available
-                /*if ((false == timing_change_done) &&
+                if((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
+                 (true == bonded_first_time) &&
+                 lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX)) {
+                   lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
+                 }
+                 /*
+                if ((false == timing_change_done) &&
                  lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX))
                  {
                  lib_aci_change_timing_GAP_PPCP(); // change the timing on the link as specified in the nRFgo studio -> nRF8001 conf. -> GAP.
                  // Used to increase or decrease bandwidth
                  timing_change_done = true;
                  }*/
+                 
                 // The pipe will be available only in an encrpyted link to the phone
                 /*if ((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
                  (lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX))) {*/
@@ -488,6 +589,9 @@ void aci_loop()
                     // Detection of ANCS pipes
                     if (lib_aci_is_discovery_finished(&aci_state)) {
                         debug_println(F(" Service Discovery is over."));
+                        debug_println(F("Redoing security!"));
+                        lib_aci_bond_request();
+                        
                         // Test ANCS Pipes availability
                         if (!lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_CONTROL_POINT_TX_ACK)) {
                             debug_println(F("  -> ANCS Control Point not available."));
@@ -532,14 +636,13 @@ void aci_loop()
                 debug_println(F("Evt link connection interval changed"));
                 //Disconnect as soon as we are bonded and required pipes are available
                 //This is used to store the bonding info on disconnect and then re-connect to verify the bond
-                /*
+                
                  if((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
                  (true == bonded_first_time) &&
                  (GAP_PPCP_MAX_CONN_INT >= aci_state.connection_interval) &&
-                 (GAP_PPCP_MIN_CONN_INT <= aci_state.connection_interval) && //Timing change already done: Provide time for the the peer to finish
-                 (lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX))) {
+                 (GAP_PPCP_MIN_CONN_INT <= aci_state.connection_interval)) {
                  lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
-                 }*/
+                 }
                 break;
                 
             case ACI_EVT_DISCONNECTED:
@@ -572,6 +675,7 @@ void aci_loop()
                             delay(500);
                             lib_aci_radio_reset();
                         }
+
                         debug_print(F("Disconnected: "));
                         // btle_status == 13 when distant device removes bonding
                         debug_println((int)aci_evt->params.disconnected.btle_status, HEX);
@@ -589,7 +693,7 @@ void aci_loop()
                         
                         lib_aci_connect(180/* in seconds */, 0x0100 /* advertising interval 100ms*/);
                         debug_println(F("Using existing bond stored in EEPROM."));
-                        debug_println(F("Advertising started. Connecting."));
+                        debug_println(F("Advertising started. Trying to Connect."));
                     }
                     free_ram();
                 }
@@ -635,7 +739,7 @@ void aci_loop()
             case ACI_EVT_DATA_CREDIT:
                 aci_state.data_credit_available = aci_state.data_credit_available + aci_evt->params.data_credit.credit;
                 break;
-            ACI_EVT_DATA_ACK:
+            case ACI_EVT_DATA_ACK:
                 break;
                 
             case ACI_EVT_PIPE_ERROR:
@@ -703,7 +807,7 @@ void aci_loop()
                 break;
             default:
                 debug_print("Unknown evt code: ");
-                debug_println(aci_evt->evt_opcode);
+                debug_println(aci_evt->evt_opcode, HEX);
                 break;
         }
     }
@@ -726,6 +830,7 @@ void aci_loop()
     {
         if (SETUP_SUCCESS == do_aci_setup(&aci_state))
         {
+            debug_println(F(" - Succesfully setup nRF8001"));
             setup_required = false;
         }
     }
@@ -764,8 +869,30 @@ void ancs_notifications_use_hook(ancs_notification_t* notif) {
             break;
         case ANCS_CATEGORY_OTHER:
             Serial.println(F("other"));
+            break;
+        case ANCS_CATEGORY_SCHEDULE:
+            Serial.println(F("schedule"));
+            break;
+        case ANCS_CATEGORY_EMAIL:
+            Serial.println(F("email"));
+            break;
+        case ANCS_CATEGORY_NEWS :
+            Serial.println(F("news"));
+            break;
+        case ANCS_CATEGORY_HEALTH_FITNESS:
+            Serial.println(F("health & fitness"));
+            break;
+        case ANCS_CATEGORY_BUSINESS_FINANCE:
+            Serial.println(F("business & finance"));
+            break;
+        case ANCS_CATEGORY_LOCATION:
+            Serial.println(F("location"));
+            break;
+        case ANCS_CATEGORY_ENTERTAINMENT:
+            Serial.println(F("entertainment"));
+            break;
         default:
-            Serial.println(F("ignored"));
+            Serial.print(F("unknown: "));
             Serial.println(notif->category, DEC);
             break;
             //return;

@@ -190,7 +190,7 @@ void ancs_notification_validation() {
 
 void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer, uint16_t len) {
     char* datetime;
-    ancs_notification_t* notif = ancs_notification_list_get(nid);//ancs_notification_list_pop();
+    ancs_notification_t* notif = ancs_notification_list_get(nid);
     debug3_print(F("ancs_cache_attribute("));
     debug3_print(nid, DEC);
     debug3_print(F(", 0x"));
@@ -248,9 +248,9 @@ void ancs_cache_attribute(uint32_t nid, uint8_t aid, const char* buffer, uint16_
         case ANCS_NOTIFICATION_ATTRIBUTE_MESSAGE:
             debug_print(F(", Message: "));
             strncpy(notif->message, buffer, strlen(buffer));
-            ancs_notification_list_remove();
+            //ancs_notification_list_remove();
             ancs_notifications_use_hook(notif);
-            free(notif);
+            //free(notif);
             break;
         default:
             debug_print(F(", Attribute unknown 0x"));

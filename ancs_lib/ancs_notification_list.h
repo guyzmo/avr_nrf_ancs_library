@@ -14,7 +14,7 @@ extern "C" {
 
 typedef void (*apply_cb)(ancs_notification_t* notif);
 
-#define CACHE_SIZE 10
+
 
 void ancs_notification_list_init();
 void ancs_notification_list_push(ancs_notification_t* notif);

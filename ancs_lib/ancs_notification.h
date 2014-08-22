@@ -9,8 +9,6 @@
 
 #include "ancs_base.h"
 
-#define TITLE_LEN 10
-#define LINE_SIZE 20
 
 #ifdef __cplusplus
 extern "C" {
