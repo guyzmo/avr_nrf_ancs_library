@@ -35,90 +35,13 @@
 #include <pack_lib.h>
 #include <aci_setup.h>
 #include <EEPROM.h>
-#include <LiquidCrystal.h>
-#include <LCDKeypad.h>
 
-LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);
-
-// Pins in use
-#define BUTTON_ADC_PIN           A0  // A0 is the button ADC input
-#define LCD_BACKLIGHT_PIN         10  // D10 controls LCD backlight
-// ADC readings expected for the 5 buttons on the ADC input
-#define RIGHT_10BIT_ADC           0  // right
-#define UP_10BIT_ADC            145  // up
-#define DOWN_10BIT_ADC          329  // down
-#define LEFT_10BIT_ADC          505  // left
-#define SELECT_10BIT_ADC        741  // right
-#define BUTTONHYSTERESIS         10  // hysteresis for valid button sensing window
-//return values for ReadButtons()
-#define BUTTON_NONE               0  //
-#define BUTTON_RIGHT              1  //
-#define BUTTON_UP                 2  //
-#define BUTTON_DOWN               3  //
-#define BUTTON_LEFT               4  //
-#define BUTTON_SELECT             5  //
-//some example macros with friendly labels for LCD backlight/pin control, tested and can be swapped into the example code as you like
-#define LCD_BACKLIGHT_OFF()     digitalWrite( LCD_BACKLIGHT_PIN, LOW )
-#define LCD_BACKLIGHT_ON()      digitalWrite( LCD_BACKLIGHT_PIN, HIGH )
-#define LCD_BACKLIGHT(state)    { if( state ){digitalWrite( LCD_BACKLIGHT_PIN, HIGH );}else{digitalWrite( LCD_BACKLIGHT_PIN, LOW );} }
-
-byte connected_char[8] = {
-    B00000,
-    B01110,
-    B10001,
-    B00100,
-    B00100,
-    B00100,
-    B01110,
-};
-
-
-byte disconnected_char[8] = {
-    B10001,
-    B01010,
-    B00100,
-    B01010,
-    B10101,
-    B00100,
-    B01110,
-};
-
-byte text_char[8] = {
-    B00000,
-    B01110,
-    B01110,
-    B01010,
-    B01010,
-    B01110,
-    B00000,
-};
-
-byte email_char[8] = {
-    B00000,
-    B11111,
-    B11011,
-    B10101,
-    B10001,
-    B11111,
-    B00000,
-    
-};
-/*
-byte email_char[8] = {
-    B00000,
-    B00000,
-    B00000,
-    B00000,
-    B00000,
-    B00000,
-    B00000,
-};*/
 
 /**
  Put the nRF8001 setup in the RAM of the nRF8001.
  */
 #include <utilities.h>
-#include <ancs_services.h>
+#include <services.h>
 /**
  Include the services_lock.h to put the setup in the OTP memory of the nRF8001.
  This would mean that the setup cannot be changed once put in.
