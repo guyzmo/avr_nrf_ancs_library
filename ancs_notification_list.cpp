@@ -6,7 +6,7 @@
 #include "ancs_notification.h"
 #include "ancs_notification_list.h"
 
-#include "data_lib/utilities.h"
+#include "utilities.h"
 
 
 // keep a buffer for each kind

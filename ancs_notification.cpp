@@ -4,7 +4,7 @@
 
 #include "ancs_notification.h"
 #include <string.h>
-#include <data_lib/utilities.h>
+#include "utilities.h"
 
 void ancs_notification_init(ancs_notification_t* n) {
     debug_println(F("ancs_notification_init()"));

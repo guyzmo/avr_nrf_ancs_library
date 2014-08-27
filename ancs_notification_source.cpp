@@ -1,13 +1,13 @@
 
+#include "../BLE/lib_aci.h"
 #include <inttypes.h>
-//#define DEBUG1
-#include <ancs_services.h>
-#include "lib_aci.h"
+#include <services.h>
+
 
 #define PACK_LITTLE_ENDIAN
-#include "data_lib/pack_lib.h"
-#include "data_lib/utilities.h"
-#include "data_lib/linked_list.h"
+#include "pack_lib.h"
+#include "utilities.h"
+#include "linked_list.h"
 
 #include "ancs_base.h"
 #include "ancs_notification_source.h"
@@ -282,7 +282,7 @@ void ancs_notification_source_parser(const uint8_t* buffer) {
             break;
         case ANCS_EVT_NOTIFICATION_REMOVED:
             debug_println(F("REMOVED"));
-            ancs_notifications_remove_hook(notif);
+            //ancs_notifications_remove_hook(notif);
             break;
     }
 }
