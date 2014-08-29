@@ -54,8 +54,16 @@ static struct aci_state_t aci_state;
 
 static hal_aci_evt_t  aci_data;
 
-void Notif::setHandleNotification(void (*fptr)(ancs_notification_t* notif)) {
-    mHandleNotificationCallback = fptr;
+void Notif::set_notification_callback_handle(void (*fptr)(ancs_notification_t* notif)) {
+    notification_callback_handle = fptr;
+}
+
+void Notif::set_connect_callback_handle(void (*fptr)(void)) {
+    connect_callback_handle = fptr;
+}
+
+void Notif::set_disconnect_callback_handle(void (*fptr)(void)) {
+    disconnect_callback_handle = fptr;
 }
 
 /*
@@ -368,6 +376,9 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
         //Note: This may be called multiple times after the Arduino has connected to the right phone
         debug_println(F("phone Detected."));
         
+        if (connect_callback_handle != NULL){
+            connect_callback_handle();
+        }
         
         // Detection of ANCS pipes
         if (lib_aci_is_discovery_finished(&aci_state)) {
@@ -420,6 +431,9 @@ void Notif::Disconnected(aci_evt_t *aci_evt)
     debug_println(F("Evt Disconnected. Link Lost or Advertising timed out"));
     if (ACI_BOND_STATUS_SUCCESS == aci_state.bonded)
     {
+        if (disconnect_callback_handle != NULL) {
+            disconnect_callback_handle();
+        }
         if (ACI_STATUS_EXTENDED == aci_evt->params.disconnected.aci_status) //Link was disconnected
         {
             if (bonded_first_time)
@@ -636,8 +650,8 @@ void Notif::ReadNotifications()
 #else
                         ancs_notification_t* notif;
                         notif = ancs_data_source_parser(aci_evt->params.data_received.rx_data.aci_data);
-                        if ((notif != NULL) && (mHandleNotificationCallback != NULL)) {
-                            mHandleNotificationCallback(notif);
+                        if ((notif != NULL) && (notification_callback_handle != NULL)) {
+                            notification_callback_handle(notif);
                         }
 #endif
                         break;
@@ -707,10 +721,7 @@ void Notif::ReadNotifications()
 
 
 void Notif::setup() {
-    mHandleNotificationCallback = NULL;
-    bonded_first_time = true;
-    setup_required = false;
-    timing_change_done = false;
+
     if (NULL != services_pipe_type_mapping)
     {
         aci_state.aci_setup_info.services_pipe_type_mapping = &services_pipe_type_mapping[0];
@@ -725,8 +736,8 @@ void Notif::setup() {
     
     //Tell the ACI library, the MCU to nRF8001 pin connections
     aci_state.aci_pins.board_name = BOARD_DEFAULT; //See board.h for details
-    aci_state.aci_pins.reqn_pin   = 12;            //The REQN and RDYN jumpers are settable, make sure this is the same
-    aci_state.aci_pins.rdyn_pin   = 11;
+    aci_state.aci_pins.reqn_pin   = reqnPin;            //The REQN and RDYN jumpers are settable, make sure this is the same
+    aci_state.aci_pins.rdyn_pin   = rdynPin;
     aci_state.aci_pins.mosi_pin   = MOSI;
     aci_state.aci_pins.miso_pin   = MISO;
     aci_state.aci_pins.sck_pin    = SCK;
@@ -752,6 +763,14 @@ void Notif::setup() {
     ancs_init();
 }
 
-Notif::Notif(uint8_t reqnPin, uint8_t rdynPin) {
+Notif::Notif(uint8_t rqPin, uint8_t rdPin) {
+    rdynPin = rdPin;
+    reqnPin = rqPin;
+    notification_callback_handle = NULL;
+    connect_callback_handle = NULL;
+    disconnect_callback_handle = NULL;
+    bonded_first_time = true;
+    setup_required = false;
+    timing_change_done = false;
    
 }

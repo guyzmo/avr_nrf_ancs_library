@@ -42,12 +42,16 @@ public:
 
     void ReadNotifications();
 
-    void setHandleNotification(void (*fptr)(ancs_notification_t* notif));
+    void set_notification_callback_handle(void (*fptr)(ancs_notification_t* notif));
+    void set_connect_callback_handle(void (*fptr)(void));
+    void set_disconnect_callback_handle(void (*fptr)(void));
 void setup();
     
 
 private:
-    void (*mHandleNotificationCallback)(ancs_notification_t* notif);
+    void (*notification_callback_handle)(ancs_notification_t* notif);
+    void (*connect_callback_handle)(void);
+    void (*disconnect_callback_handle)(void);
     aci_status_code_t bond_data_restore( uint8_t eeprom_status, bool *bonded_first_time_state);
     void bond_data_store(aci_evt_t *evt);
     bool bond_data_read_store();
@@ -56,7 +60,8 @@ private:
     void PipeStatus(aci_evt_t *aci_evt);
     void Disconnected( aci_evt_t *aci_evt);
     void HwError( aci_evt_t *aci_evt);
-    
+    uint8_t reqnPin;
+    uint8_t rdynPin;
     int _pin;
     /*
      We will store the bonding info for the nRF8001 in the EEPROM/Flash of the MCU to recover from a power loss situation

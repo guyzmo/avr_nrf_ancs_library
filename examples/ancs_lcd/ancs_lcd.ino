@@ -41,6 +41,18 @@ Notif notif(12,11);
 #define LCD_BACKLIGHT_ON()      digitalWrite( LCD_BACKLIGHT_PIN, HIGH )
 #define LCD_BACKLIGHT(state)    { if( state ){digitalWrite( LCD_BACKLIGHT_PIN, HIGH );}else{digitalWrite( LCD_BACKLIGHT_PIN, LOW );} }
 
+byte antenna_char[8] = {
+    B00000,
+    B00000,
+    B00000,
+    B00100,
+    B00100,
+    B00100,
+    B01110,
+};
+
+
+
 byte connected_char[8] = {
     B00000,
     B01110,
@@ -88,6 +100,13 @@ unsigned long last_screen_update = 0;
 unsigned long backlight_started = 0;
 boolean backlight = false;
 boolean connected = false;
+
+void ancs_connected() {
+    connected = true;
+    }
+void ancs_disconnected() {
+    connected = false;
+    }
 
 void ancs_notifications(ancs_notification_t* notif) {
 
@@ -157,7 +176,7 @@ void ancs_notifications(ancs_notification_t* notif) {
     Serial.print(F("   subtitle: '")); Serial.print( notif->subtitle ); Serial.println("'");
     Serial.print(F("   message:  '")); Serial.print( notif->message  ); Serial.println("'");
    lcd.setCursor(0,0);
-   lcd.print((char)2);
+   lcd.print((char)3);
     lcd.setCursor(2,0);
     lcd.print(line1);
     lcd.setCursor(0,1);
@@ -180,14 +199,17 @@ void setup(void)
 #endif
     Serial.println(F("Arduino setup"));
     notif.setup();
-    notif.setHandleNotification(ancs_notifications);
+    notif.set_notification_callback_handle(ancs_notifications);
+    notif.set_connect_callback_handle(ancs_connected);
+    notif.set_disconnect_callback_handle(ancs_disconnected);
     lcd.begin(16, 2);
     digitalWrite( LCD_BACKLIGHT_PIN, HIGH );  //backlight control pin D3 is high (on)
     pinMode( LCD_BACKLIGHT_PIN, OUTPUT );     //D3 is an output
-    lcd.createChar(0, connected_char);
-    lcd.createChar(1, disconnected_char);
-    lcd.createChar(2, text_char);
-    lcd.createChar(3, email_char);
+    lcd.createChar(0, antenna_char);
+    lcd.createChar(1, connected_char);
+    lcd.createChar(2, disconnected_char);
+    lcd.createChar(3, text_char);
+    lcd.createChar(4, email_char);
 
     lcd.clear();
     lcd.setCursor(0,0);
@@ -202,15 +224,15 @@ void loop()
     if((millis() - last_screen_update) > 1000) {
       lcd.setCursor(15,0);
       lcd.print(wait);
-      if (wait == ' ')
+      if (wait == 0)
       {
           if (connected){
-              wait = 0;
-          }else {
               wait = 1;
+          }else {
+              wait = 2;
           }
       } else {
-        wait=' ';
+        wait=0;
       }
       last_screen_update = millis();
     }
