@@ -158,14 +158,14 @@
         <SecurityRequestDelay>99</SecurityRequestDelay>
         <MinimumKeySize>7</MinimumKeySize>
         <MaximumKeySize>16</MaximumKeySize>
-        <AdvertisingDataBondedBitmap>c50</AdvertisingDataBondedBitmap>
-        <AdvertisingDataGeneralBitmap>4a</AdvertisingDataGeneralBitmap>
+        <AdvertisingDataBondedBitmap>10</AdvertisingDataBondedBitmap>
+        <AdvertisingDataGeneralBitmap>5a</AdvertisingDataGeneralBitmap>
         <AdvertisingDataBrodcastBitmap>0</AdvertisingDataBrodcastBitmap>
         <AdvertisingDataBondedScanResponseBitmap>2c50</AdvertisingDataBondedScanResponseBitmap>
-        <AdvertisingDataGeneralScanResponseBitmap>2d4f</AdvertisingDataGeneralScanResponseBitmap>
+        <AdvertisingDataGeneralScanResponseBitmap>2c40</AdvertisingDataGeneralScanResponseBitmap>
         <AdvertisingDataBrodcastScanResponseBitmap>0</AdvertisingDataBrodcastScanResponseBitmap>
-        <AdvertisingDataBondedBitmapCustom>0</AdvertisingDataBondedBitmapCustom>
-        <AdvertisingDataGeneralBitmapCustom>0</AdvertisingDataGeneralBitmapCustom>
+        <AdvertisingDataBondedBitmapCustom>1</AdvertisingDataBondedBitmapCustom>
+        <AdvertisingDataGeneralBitmapCustom>1</AdvertisingDataGeneralBitmapCustom>
         <AdvertisingDataBrodcastBitmapCustom>0</AdvertisingDataBrodcastBitmapCustom>
         <AdvertisingDataBondedScanResponseBitmapCustom>0</AdvertisingDataBondedScanResponseBitmapCustom>
         <AdvertisingDataGeneralScanResponseBitmapCustom>0</AdvertisingDataGeneralScanResponseBitmapCustom>
@@ -175,8 +175,8 @@
         <MaximumConnectionInterval>800</MaximumConnectionInterval>
         <SlaveLatency>0</SlaveLatency>
         <TimeoutMultipler>600</TimeoutMultipler>
-        <AddServiceUpdateCharacteristic>false</AddServiceUpdateCharacteristic>
-        <AddServiceUpdateCharacteristicPipe>false</AddServiceUpdateCharacteristicPipe>
+        <AddServiceUpdateCharacteristic>true</AddServiceUpdateCharacteristic>
+        <AddServiceUpdateCharacteristicPipe>true</AddServiceUpdateCharacteristicPipe>
         <SercieToSolicitate>
             <Uuid BaseUUID="79050000B5CE4E99A40F4B1E122D00D0" BaseUUIDName="ANCS">f431</Uuid>
         </SercieToSolicitate>

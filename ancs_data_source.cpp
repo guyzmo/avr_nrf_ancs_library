@@ -17,7 +17,7 @@
 
 
 extern boolean command_send_enable;
-
+extern unsigned long last_command_send;
 static ancs_parsing_env_t ancs_parsing_env;
 
  ancs_notification_t* ancs_data_source_parser(const uint8_t* buffer) {
@@ -209,10 +209,12 @@ ancs_notification_t* ancs_cache_attribute(uint32_t nid, uint8_t aid, const char*
     if (notif != NULL) {
 
     switch (aid) {
+        #ifdef ANCS_USE_APP
         case ANCS_NOTIFICATION_ATTRIBUTE_APP_IDENTIFIER:
             debug2_print(F(", App: "));
             strncpy(notif->app, buffer, strlen(buffer));
             break;
+#endif
         case ANCS_NOTIFICATION_ATTRIBUTE_TITLE:
             debug2_print(F(", Title: "));
             strncpy(notif->title, buffer, strlen(buffer));
@@ -246,10 +248,12 @@ ancs_notification_t* ancs_cache_attribute(uint32_t nid, uint8_t aid, const char*
             debug_print(F(", Msglen: "));
             notif->msg_len = atoi(buffer);
             break;
+        #ifdef ANCS_USE_SUBTITLE
         case ANCS_NOTIFICATION_ATTRIBUTE_SUBTITLE:
             debug_print(F(", SubTitle: "));
             strncpy(notif->subtitle, buffer, strlen(buffer));
             break;
+        #endif
         case ANCS_NOTIFICATION_ATTRIBUTE_MESSAGE:
             debug_print(F(", Message: "));
             strncpy(notif->message, buffer, strlen(buffer));

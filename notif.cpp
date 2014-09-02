@@ -27,6 +27,7 @@ void __ble_assert(const char *file, uint16_t line)
     while(1);
 }
 
+
 uint8_t eeprom_read(int address)
 {
 	return eeprom_read_byte((unsigned char *) address);
@@ -53,6 +54,24 @@ static hal_aci_data_t setup_msgs[NB_SETUP_MESSAGES] PROGMEM = SETUP_MESSAGES_CON
 static struct aci_state_t aci_state;
 
 static hal_aci_evt_t  aci_data;
+
+
+void Notif::print_pipes(aci_evt_t* aci_evt) {
+    Serial.print("Here are the available open pipes: ");
+    for (uint8_t i=1; i<=NUMBER_OF_PIPES; ++i)
+        if (lib_aci_is_pipe_available(&aci_state, i)) {
+            Serial.print(i);
+            Serial.print(", ");
+        }
+    Serial.println("");
+    Serial.print(F("Here are the available closed pipes: "));
+    for (uint8_t i=1; i<=NUMBER_OF_PIPES; ++i)
+        if (lib_aci_is_pipe_closed(&aci_state, i)) {
+            Serial.print(i);
+            Serial.print(", ");
+        }
+    Serial.println("");
+}
 
 void Notif::set_notification_callback_handle(void (*fptr)(ancs_notification_t* notif)) {
     notification_callback_handle = fptr;
@@ -233,7 +252,7 @@ bool Notif::bond_data_read_store()
 }
 
 void Notif::DeviceStarted( aci_evt_t *aci_evt) {
-    debug_println(F("Evt Device Started - "));
+
     aci_state.data_credit_total = aci_evt->params.device_started.credit_available;
     switch(aci_evt->params.device_started.device_mode)
     {
@@ -258,11 +277,11 @@ void Notif::DeviceStarted( aci_evt_t *aci_evt) {
                     uint8_t eeprom_status = 0;
                     eeprom_status = eeprom_read(0);
                     if (eeprom_status != 0xFF)
-                    {
+                    {/*
                         Serial.println(F("Previous Bond present. Restoring"));
                         Serial.println(F("Using existing bond stored in EEPROM."));
                         Serial.println(F("   To delete the bond stored in EEPROM, connect Pin 6 to 3.3v and Reset."));
-                        Serial.println(F("   Make sure that the bond on the phone/PC is deleted as well."));
+                        Serial.println(F("   Make sure that the bond on the phone/PC is deleted as well."));*/
                         //We must have lost power and restarted and must restore the bonding infromation using the ACI Write Dynamic Data
                         if (ACI_STATUS_TRANSACTION_COMPLETE == bond_data_restore( eeprom_status, &bonded_first_time))
                         {
@@ -334,6 +353,19 @@ void Notif::CommandResponse( aci_evt_t *aci_evt) {
         case ACI_CMD_CHANGE_TIMING:      debug_println(F("Change Timing" )); break;
         case ACI_CMD_OPEN_REMOTE_PIPE:   debug_println(F("Open Remote Pipe" )); break;
         case ACI_CMD_RADIO_RESET:        debug_println(F("Radio Reset")); break;
+            /**
+             * Start a security request in bonding mode
+             */
+        case    ACI_CMD_BOND_SECURITY_REQUEST:    debug_println(F("Bond Sec Request")); break;
+
+            /**
+             * Close a previously opened remote pipe
+             */
+        case    ACI_CMD_CLOSE_REMOTE_PIPE:         debug_println(F("Close Remote Pipe")); break;
+            /**
+             * Invalid ACI command opcode
+             */
+        case    ACI_CMD_INVALID:                    debug_println(F("Invalid Command")); break;
             
         default:
             Serial.print(F("Evt Unk Cmd: "));
@@ -348,6 +380,7 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
     if((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
        (true == bonded_first_time) &&
        lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX)) {
+        debug_println("Forcing Disconnect");
         lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
     }
     /*
@@ -375,52 +408,76 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
         
         //Note: This may be called multiple times after the Arduino has connected to the right phone
         debug_println(F("phone Detected."));
-        
-        if (connect_callback_handle != NULL){
-            connect_callback_handle();
-        }
-        
+
         // Detection of ANCS pipes
         if (lib_aci_is_discovery_finished(&aci_state)) {
             debug_println(F(" Service Discovery is over."));
-            debug_println(F("Redoing security!"));
-            lib_aci_bond_request();
+            /*debug_println(F("Redoing security!"));
+            lib_aci_bond_request();*/
+/*
+        
+            if (lib_aci_is_pipe_closed(&aci_state, PIPE_GATT_SERVICE_CHANGED_TX_ACK)) {
+                debug_println(F("  -> GATT Service Changed."));
+                if (!lib_aci_open_remote_pipe(&aci_state, PIPE_GATT_SERVICE_CHANGED_TX_ACK)){
+                    debug_println(F("  -> GATT Service Changed: Failure opening."));
+                } else {
+                    debug_println(F("  -> GATT Service Changed: Success opening."));
+                }
+            } else {
+                debug_println(F("  -> GATT Service Changed open."));
+            }
             
             // Test ANCS Pipes availability
-            if (!lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_CONTROL_POINT_TX_ACK)) {
-                debug_println(F("  -> ANCS Control Point not available."));
-            } else {
-                debug_println(F("  -> ANCS Control Point available."));
+            if (lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_CONTROL_POINT_TX_ACK)) {
+                debug_println(F("  -> ANCS Control Point closed."));
                 if (!lib_aci_open_remote_pipe(&aci_state, PIPE_ANCS_CONTROL_POINT_TX_ACK)){
                     debug_println(F("  -> ANCS Control Point Pipe: Failure opening."));
                 } else {
                     debug_println(F("  -> ANCS Control Point Pipe: Success opening."));
                 }
-            }
-            if (!lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_DATA_SOURCE_RX)) {
-                debug_println(F("  -> ANCS Data Source not available."));
             } else {
-                debug_println(F("  -> ANCS Data Source available."));
+                debug_println(F("  -> ANCS Control Point open."));
+            }
+            
+            if (lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_DATA_SOURCE_RX)) {
+                
+                debug_println(F("  -> ANCS Data Source Closed"));
                 if (!lib_aci_open_remote_pipe(&aci_state, PIPE_ANCS_DATA_SOURCE_RX)){
                     debug_println(F("  -> ANCS Data Source Pipe: Failure opening."));
                 } else {
                     debug_println(F("  -> ANCS Data Source Pipe: Success opening."));
                 }
-            }
-            if (!lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
-                debug_println(F("  -> ANCS Notification Source not available."));
             } else {
-                debug_println(F("  -> ANCS Notification Source available."));
+                debug_println(F("  -> ANCS Data Source Open"));
+            }*/
+            if (lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
+                debug_println(F("  -> ANCS Notification Source closed"));
                 if (!lib_aci_open_remote_pipe(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
                     debug_println(F("  -> ANCS Notification Source Pipe: Failure opening."));
                 } else {
                     debug_println(F("  -> ANCS Notification Source Pipe: Success opening."));
+
+                }
+            } else {
+                debug_println(F("  -> ANCS Notification Source Open"));
+                if (force_discovery_required && lib_aci_is_pipe_available(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
+                    debug_println(F("  -> ANCS Notification Source: Reseting Pipe"));
+                    //lib_aci_close_remote_pipe(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX);
+                    uint8_t* buffer;
+                    buffer = (uint8_t*)malloc(4);
+                    pack(buffer, "BB", 0x000C, 0xFFFF );
+                    debug_println(lib_aci_send_data(PIPE_GATT_SERVICE_CHANGED_TX_ACK, buffer, 4));
+                    free(buffer);
+                    force_discovery_required = false;
+                    if (connect_callback_handle != NULL){
+                        connect_callback_handle();
+                    }
                 }
             }
         } else {
             debug_println(F(" Service Discovery is still going on."));
         }
-        
+        print_pipes(aci_evt);
         
     }
     
@@ -508,10 +565,10 @@ void Notif::HwError(aci_evt_t *aci_evt)
         eeprom_status = eeprom_read(0);
         if (eeprom_status != 0xFF)
         {
-            debug_println(F("Previous Bond present. Restoring"));
+         /*   debug_println(F("Previous Bond present. Restoring"));
             debug_println(F("Using existing bond stored in EEPROM."));
             debug_println(F("   To delete the bond stored in EEPROM, connect Pin 6 to 3.3v and Reset."));
-            debug_println(F("   Make sure that the bond on the phone/PC is deleted as well."));
+            debug_println(F("   Make sure that the bond on the phone/PC is deleted as well."));*/
             //We must have lost power and restarted and must restore the bonding infromation using the ACI Write Dynamic Data
             if (ACI_STATUS_TRANSACTION_COMPLETE == bond_data_restore( eeprom_status, &bonded_first_time))
             {
@@ -569,6 +626,7 @@ void Notif::ReadNotifications()
                 debug_println(F("Evt Connected"));
                 aci_state.data_credit_available = aci_state.data_credit_total;
                 timing_change_done = false;
+                force_discovery_required = true;
                 /*
                  Get the device version of the nRF8001 and store it in the Hardware Revision String
                  */
@@ -586,7 +644,7 @@ void Notif::ReadNotifications()
                 aci_state.bonded = aci_evt->params.bond_status.status_code;
                 
                 break;
-                
+            /*
             case ACI_EVT_KEY_REQUEST:
                 debug_println(F("Evt Key Request"));
                 
@@ -610,13 +668,13 @@ void Notif::ReadNotifications()
                 }
                 Serial.println("]");
                 
-                break;
+                break;*/
                 
             case ACI_EVT_PIPE_STATUS:
                 
                 PipeStatus( aci_evt);
                 break;
-                
+             /*
             case ACI_EVT_TIMING:
                 debug_println(F("Evt link connection interval changed"));
                 //Disconnect as soon as we are bonded and required pipes are available
@@ -629,7 +687,7 @@ void Notif::ReadNotifications()
                     lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
                 }
                 break;
-                
+                */
             case ACI_EVT_DISCONNECTED:
                 Disconnected(aci_evt);
                 break;
@@ -720,6 +778,7 @@ void Notif::ReadNotifications()
 }
 
 
+
 void Notif::setup() {
 
     if (NULL != services_pipe_type_mapping)
@@ -758,7 +817,7 @@ void Notif::setup() {
     lib_aci_init(&aci_state, false);
     aci_state.bonded = ACI_BOND_STATUS_FAILED;
     
-    
+    //eeprom_write(0, 0xFF);
     
     ancs_init();
 }
@@ -772,5 +831,7 @@ Notif::Notif(uint8_t rqPin, uint8_t rdPin) {
     bonded_first_time = true;
     setup_required = false;
     timing_change_done = false;
+    force_discovery_required = true;
+    
    
 }

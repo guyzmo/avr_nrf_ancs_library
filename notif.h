@@ -45,10 +45,13 @@ public:
     void set_notification_callback_handle(void (*fptr)(ancs_notification_t* notif));
     void set_connect_callback_handle(void (*fptr)(void));
     void set_disconnect_callback_handle(void (*fptr)(void));
+
 void setup();
     
 
 private:
+    void print_pipes(aci_evt_t* aci_evt);
+    unsigned char ble_busy();
     void (*notification_callback_handle)(ancs_notification_t* notif);
     void (*connect_callback_handle)(void);
     void (*disconnect_callback_handle)(void);
@@ -73,6 +76,7 @@ private:
      */
     bool timing_change_done;
     bool setup_required;
+    bool force_discovery_required;
     
     // aci_struct that will contain
     // total initial credits

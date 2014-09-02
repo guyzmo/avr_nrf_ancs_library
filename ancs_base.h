@@ -11,8 +11,10 @@
 #define ANCS_NOTIFICATION_ATTRIBUTE_DATA_SIZE 16
 #define TITLE_LEN 16
 #define LINE_SIZE 16
+#define MESSAGE_SIZE 40
 
-#define CACHE_SIZE 10
+
+#define CACHE_SIZE 5
 
 ////////////////////////////////////////////////////////////////////////////////////
 #define ANCS_EVT_NOTIFICATION_ADDED     0x0
