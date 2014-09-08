@@ -8,7 +8,8 @@
 //#include "Arduino.h"
 
 #include "notif.h"
-#define DEBUG1
+
+//#define DEBUG1
 
 #include "utilities.h"
 #include "services.h"
@@ -338,8 +339,6 @@ void Notif::CommandResponse( aci_evt_t *aci_evt) {
         case ACI_CMD_GET_DEVICE_ADDRESS:
             debug_print(F("Device Address"));
             //Store the version and configuration information of the nRF8001 in the Hardware Revision String Characteristic
-            lib_aci_set_local_data(&aci_state, PIPE_DEVICE_INFORMATION_HARDWARE_REVISION_STRING_SET,
-                                   (uint8_t *)&(aci_evt->params.cmd_rsp.params.get_device_version), sizeof(aci_evt_cmd_rsp_params_get_device_version_t));
             break;
         case ACI_CMD_WAKEUP:             debug_println(F("Wake Up"       )); break;
         case ACI_CMD_SLEEP:              debug_println(F("Sleep"         )); break;
@@ -379,7 +378,7 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
     //Link is encrypted when the PIPE_LINK_LOSS_ALERT_ALERT_LEVEL_RX_ACK_AUTO is available
     if((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
        (true == bonded_first_time) &&
-       lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX)) {
+       lib_aci_is_pipe_available(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
         debug_println("Forcing Disconnect");
         lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
     }
@@ -462,7 +461,7 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
                 debug_println(F("  -> ANCS Notification Source Open"));
                 if (force_discovery_required && lib_aci_is_pipe_available(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
                     debug_println(F("  -> ANCS Notification Source: Reseting Pipe"));
-                    //lib_aci_close_remote_pipe(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX);
+                    
                     uint8_t* buffer;
                     buffer = (uint8_t*)malloc(4);
                     pack(buffer, "BB", 0x000C, 0xFFFF );
@@ -644,31 +643,7 @@ void Notif::ReadNotifications()
                 aci_state.bonded = aci_evt->params.bond_status.status_code;
                 
                 break;
-            /*
-            case ACI_EVT_KEY_REQUEST:
-                debug_println(F("Evt Key Request"));
-                
-                switch (aci_evt->params.key_request.key_type) {
-                    case ACI_KEY_TYPE_INVALID:
-                        debug_println(F("Key type is invalid"));
-                        break;
-                    case ACI_KEY_TYPE_PASSKEY:
-                        debug_println(F("Key type is passkey"));
-                        break;
-                }
-                
-                break;
-                
-            case ACI_EVT_DISPLAY_PASSKEY:
-                
-                Serial.print(F("Evt Display Passkey: [ "));
-                for (uint8_t i=0; i<6; ++i) {
-                    Serial.print((char)aci_evt->params.display_passkey.passkey[i]);
-                    Serial.print(" ");
-                }
-                Serial.println("]");
-                
-                break;*/
+
                 
             case ACI_EVT_PIPE_STATUS:
                 
@@ -696,22 +671,18 @@ void Notif::ReadNotifications()
                 debug_println(F("Evt Data Received"));
                 switch (aci_evt->params.data_received.rx_data.pipe_number) {
                     case PIPE_ANCS_NOTIFICATION_SOURCE_RX:
-#ifdef NO_ANCS
-                        handle_notification(aci_evt->params.data_received.rx_data.aci_data);
-#else
+
                         ancs_notification_source_parser(aci_evt->params.data_received.rx_data.aci_data);
-#endif
+
                         break;
                     case PIPE_ANCS_DATA_SOURCE_RX:
-#ifdef NO_ANCS
-                        debug_println(F("DATA SOURCE"));
-#else
+
                         ancs_notification_t* notif;
                         notif = ancs_data_source_parser(aci_evt->params.data_received.rx_data.aci_data);
                         if ((notif != NULL) && (notification_callback_handle != NULL)) {
                             notification_callback_handle(notif);
                         }
-#endif
+
                         break;
                     default:
                         debug_println(F("Un Covered Evt Data received on Pipe #"));
@@ -754,13 +725,13 @@ void Notif::ReadNotifications()
     }
     else
     {
-        //Serial.println(F("No ACI Events available"));
+
         // No event in the ACI Event queue and if there is no event in the ACI command queue the arduino can go to sleep
         // Arduino can go to sleep now
         // Wakeup from sleep from the RDYN line
-#ifndef NO_ANCS
+
         ancs_run();
-#endif
+
     }
     
     /* setup_required is set to true when the device starts up and enters setup mode.
@@ -817,6 +788,9 @@ void Notif::setup() {
     lib_aci_init(&aci_state, false);
     aci_state.bonded = ACI_BOND_STATUS_FAILED;
     
+    
+    //If things get really crazy, uncomment this line. It wipes the saved EEPROM information for the Nordic chip. Good to do this if the services.h file gets updated.
+    //After it is wiped, comment and reupload.
     //eeprom_write(0, 0xFF);
     
     ancs_init();

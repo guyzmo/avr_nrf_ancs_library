@@ -198,10 +198,16 @@ void setup(void)
     Serial.begin(115200);
     //Wait until the serial port is available (useful only for the Leonardo)
     //As the Leonardo board is not reseted every time you open the Serial Monitor
+    /*
 #if defined (__AVR_ATmega32U4__)
     while(!Serial)
     {}
-#endif
+#endif*/
+    
+    //If things get really crazy, uncomment this line. It wipes the saved EEPROM information for the Nordic chip. Good to do this if the services.h file gets updated.
+    //After it is wiped, comment and reupload.
+    //eeprom_write(0, 0xFF);
+    
     Serial.println(F("Arduino setup"));
     notif.setup();
     notif.set_notification_callback_handle(ancs_notifications);

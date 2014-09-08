@@ -10,26 +10,13 @@
 #define notif_h
 
 #include <Arduino.h>
-
 #include <boards.h>
 #include <lib_aci.h>
 #include <aci_setup.h>
-//#include "../BLE/lib_aci.h"
-
-//#include "../BLE/aci_setup.h"
-
 #include <avr/eeprom.h>
 
 
-
-
-//#include <hal_platform.h>
-
-
 #include "ancs.h"
-
-//#include <hal_aci_tl.h>
-//#include <hal_platform.h>
 
 
 void eepromWrite(int address, uint8_t value);

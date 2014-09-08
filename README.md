@@ -81,6 +81,16 @@ The callback is set by passing the library the function in your sketch you want 
     notif.set_disconnect_callback_handle(ancs_connected);
 
 
+Defines
+--
+`#define DEBUG1`
+Turns on debugging using a Macro. With this off, the serial.prints are ignored and a lot of memory is saved.
+
+`#define ANCS_USE_APP`
+`#define ANCS_USE_SUBTITLE`
+Turns on the respective Notification fields. With this off, they will not be fetched and cached, which saves memory.
+
+
 Pairing an iOS Device
 --
 Once you have a Sketch written and loaded on your Arduino, it is time to pair your iPhone or iPad with it. On the iOS device go into `Settings`, then `Bluetooth`. Under `Devices` look for `Notif` and tap it. It should ask you if you would like to Pair. After that, both the BLE board and the iOS device will be Bonded and remember the connection. If things are working right, both sides will automatically reconnect when they are in range and this information should be remembered even after the Arduino is reset.
