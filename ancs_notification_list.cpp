@@ -6,7 +6,7 @@
 #include "ancs_notification.h"
 #include "ancs_notification_list.h"
 
-#include "data_lib/utilities.h"
+#include "utilities.h"
 
 
 // keep a buffer for each kind
@@ -34,9 +34,13 @@ void ancs_notification_list_clear(uint8_t index) {
     _notification_buffer[index].category           = 0;
     _notification_buffer[index].action             = 0;
     _notification_buffer[index].msg_len            = 0;
+    #ifdef ANCS_USE_APP
     memset(_notification_buffer[index].app, 0, LINE_SIZE+1);
+#endif
     memset(_notification_buffer[index].title, 0, LINE_SIZE+1);
+    #ifdef ANCS_USE_SUBTITLE
     memset(_notification_buffer[index].subtitle, 0, LINE_SIZE+1);
+#endif
     memset(_notification_buffer[index].message, 0, LINE_SIZE+1);
 }
 
