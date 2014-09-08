@@ -414,7 +414,7 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
             debug_println(F(" Service Discovery is over."));
             /*debug_println(F("Redoing security!"));
             lib_aci_bond_request();*/
-/*
+
         
             if (lib_aci_is_pipe_closed(&aci_state, PIPE_GATT_SERVICE_CHANGED_TX_ACK)) {
                 debug_println(F("  -> GATT Service Changed."));
@@ -449,7 +449,7 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
                 }
             } else {
                 debug_println(F("  -> ANCS Data Source Open"));
-            }*/
+            }
             if (lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
                 debug_println(F("  -> ANCS Notification Source closed"));
                 if (!lib_aci_open_remote_pipe(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
