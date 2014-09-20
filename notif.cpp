@@ -9,7 +9,7 @@
 
 #include "notif.h"
 
-//#define DEBUG1
+#define DEBUG1
 
 #include "utilities.h"
 #include "services.h"
@@ -84,6 +84,10 @@ void Notif::set_connect_callback_handle(void (*fptr)(void)) {
 
 void Notif::set_disconnect_callback_handle(void (*fptr)(void)) {
     disconnect_callback_handle = fptr;
+}
+
+void Notif::set_reset_callback_handle(void (*fptr)(void)) {
+    reset_callback_handle = fptr;
 }
 
 /*
@@ -376,44 +380,49 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
 {
     debug_println(F("Evt Pipe Status"));
     //Link is encrypted when the PIPE_LINK_LOSS_ALERT_ALERT_LEVEL_RX_ACK_AUTO is available
+    
     if((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
        (true == bonded_first_time) &&
        lib_aci_is_pipe_available(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
-        debug_println("Forcing Disconnect");
-        lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
+        //debug_println("Storing Bond Data in EEPROM");
+        //lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
+        
+     /*    bonded_first_time = false;
+        //Store away the dynamic data of the nRF8001 in the Flash or EEPROM of the MCU
+        // so we can restore the bond information of the nRF8001 in the event of power loss
+        if (bond_data_read_store())
+        {
+            debug_println(F("Dynamic Data read and stored successfully"));
+        } else {
+            debug_println(F("Dynamic Data read and stored FAILED!!!"));
+        }*/
     }
-    /*
-     if ((false == timing_change_done) &&
-     lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX))
-     {
-     lib_aci_change_timing_GAP_PPCP(); // change the timing on the link as specified in the nRFgo studio -> nRF8001 conf. -> GAP.
-     // Used to increase or decrease bandwidth
-     timing_change_done = true;
-     }*/
+ 
     
-    // The pipe will be available only in an encrpyted link to the phone
-    /*if ((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
-     (lib_aci_is_pipe_available(&aci_state, PIPE_BATTERY_BATTERY_LEVEL_TX))) {*/
-    
-    if (lib_aci_is_discovery_finished(&aci_state) && (ACI_BOND_STATUS_SUCCESS != aci_state.bonded)) {
-        debug_println(F("Upgrading security!"));
+     if (lib_aci_is_discovery_finished(&aci_state) && (ACI_BOND_STATUS_SUCCESS != aci_state.bonded)) {
+     debug_println(F("Upgrading security!"));
+     lib_aci_bond_request();
+     }
+/*
+  if (true == bonded_first_time) {
+        debug_println(F("First time! Upgrading security!"));
         lib_aci_bond_request();
     }
-    /*
-     if (ACI_BOND_STATUS_SUCCESS == aci_state.bonded)  {
-     lib_aci_open_remote_pipe(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX_1);
-     }*/
+    
+    if (true ==force_discovery_required){
+        debug_println(F("Force Discovery Required! Upgrading security!"));
+    lib_aci_bond_request();
+}*/
     if (ACI_BOND_STATUS_SUCCESS == aci_state.bonded)  {
         
         //Note: This may be called multiple times after the Arduino has connected to the right phone
         debug_println(F("phone Detected."));
 
         // Detection of ANCS pipes
-        if (lib_aci_is_discovery_finished(&aci_state)) {
+       if (lib_aci_is_discovery_finished(&aci_state)) {
             debug_println(F(" Service Discovery is over."));
-            /*debug_println(F("Redoing security!"));
-            lib_aci_bond_request();*/
-
+           
+           print_pipes(aci_evt);
         
             if (lib_aci_is_pipe_closed(&aci_state, PIPE_GATT_SERVICE_CHANGED_TX_ACK)) {
                 debug_println(F("  -> GATT Service Changed."));
@@ -425,7 +434,7 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
             } else {
                 debug_println(F("  -> GATT Service Changed open."));
             }
-            
+         
             // Test ANCS Pipes availability
             if (lib_aci_is_pipe_closed(&aci_state, PIPE_ANCS_CONTROL_POINT_TX_ACK)) {
                 debug_println(F("  -> ANCS Control Point closed."));
@@ -460,23 +469,23 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
             } else {
                 debug_println(F("  -> ANCS Notification Source Open"));
                 if (force_discovery_required && lib_aci_is_pipe_available(&aci_state, PIPE_ANCS_NOTIFICATION_SOURCE_RX)) {
-                    debug_println(F("  -> ANCS Notification Source: Reseting Pipe"));
-                    
+                    /*debug_println(F("  -> ANCS Notification Source: Reseting Pipe"));
                     uint8_t* buffer;
                     buffer = (uint8_t*)malloc(4);
                     pack(buffer, "BB", 0x000C, 0xFFFF );
-                    debug_println(lib_aci_send_data(PIPE_GATT_SERVICE_CHANGED_TX_ACK, buffer, 4));
-                    free(buffer);
+                    lib_aci_send_data(PIPE_GATT_SERVICE_CHANGED_TX_ACK, buffer, 4);
+                    free(buffer);*/
                     force_discovery_required = false;
                     if (connect_callback_handle != NULL){
                         connect_callback_handle();
                     }
                 }
             }
+        
         } else {
             debug_println(F(" Service Discovery is still going on."));
         }
-        print_pipes(aci_evt);
+        
         
     }
     
@@ -484,7 +493,7 @@ void Notif::PipeStatus(aci_evt_t *aci_evt)
 
 void Notif::Disconnected(aci_evt_t *aci_evt)
 {
-    debug_println(F("Evt Disconnected. Link Lost or Advertising timed out"));
+    debug_print(F("Evt Disconnected: "));
     if (ACI_BOND_STATUS_SUCCESS == aci_state.bonded)
     {
         if (disconnect_callback_handle != NULL) {
@@ -492,6 +501,7 @@ void Notif::Disconnected(aci_evt_t *aci_evt)
         }
         if (ACI_STATUS_EXTENDED == aci_evt->params.disconnected.aci_status) //Link was disconnected
         {
+            
             if (bonded_first_time)
             {
                 bonded_first_time = false;
@@ -500,6 +510,8 @@ void Notif::Disconnected(aci_evt_t *aci_evt)
                 if (bond_data_read_store())
                 {
                     debug_println(F("Dynamic Data read and stored successfully"));
+                } else {
+                    debug_println(F("Dynamic Data read and stored FAILED!!!"));
                 }
             }
             if (0x24 == aci_evt->params.disconnected.btle_status)
@@ -515,6 +527,10 @@ void Notif::Disconnected(aci_evt_t *aci_evt)
                 lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
                 delay(500);
                 lib_aci_radio_reset();
+                if (reset_callback_handle != NULL) {
+                    reset_callback_handle();
+                }
+                
             }
             
             debug_print(F("Disconnected: "));
@@ -530,11 +546,18 @@ void Notif::Disconnected(aci_evt_t *aci_evt)
             lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
             delay(500);
             lib_aci_radio_reset();
+            if (reset_callback_handle != NULL) {
+                reset_callback_handle();
+            }
+            
         } else {
             
             lib_aci_connect(180/* in seconds */, 0x0100 /* advertising interval 100ms*/);
             debug_println(F("Using existing bond stored in EEPROM."));
-            debug_println(F("Advertising started. Trying to Connect."));
+            debug_print(F("Advertising started. Trying to Connect. Disconnect Status: "));
+            debug_println((int)aci_evt->params.disconnected.aci_status, HEX);
+            debug_print(F("BTLE status: "));
+            debug_println((int)aci_evt->params.disconnected.btle_status, HEX);
         }
         free_ram();
     }
@@ -542,7 +565,20 @@ void Notif::Disconnected(aci_evt_t *aci_evt)
     {
         //There is no existing bond. Try to bond.
         lib_aci_bond(180/* in seconds */, 0x0050 /* advertising interval 50ms*/);
-        debug_println(F("Advertising started. Bonding."));
+        debug_println(F("No existing bond stored in EEPROM."));
+        debug_print(F("Advertising started. Bonding. Dissconnect status: "));
+        debug_println((int)aci_evt->params.disconnected.aci_status, HEX);
+        debug_print(F("BTLE status: "));
+        debug_println((int)aci_evt->params.disconnected.btle_status, HEX);
+
+    }
+    if (aci_evt->params.disconnected.btle_status == DISCONNECT_REASON_CX_CLOSED_BY_PEER_DEVICE)
+    {
+        debug_println(F("Remote device disconnected"));
+    }
+    if (aci_evt->params.disconnected.btle_status == DISCONNECT_REASON_CX_CLOSED_BY_LOCAL_DEVICE)
+    {
+        debug_println(F("Local device disconnected"));
     }
     
 }
@@ -626,20 +662,21 @@ void Notif::ReadNotifications()
                 aci_state.data_credit_available = aci_state.data_credit_total;
                 timing_change_done = false;
                 force_discovery_required = true;
+                
                 /*
                  Get the device version of the nRF8001 and store it in the Hardware Revision String
                  */
                 debug_print(F("aci_state.bonded: "));
                 debug_println(aci_state.bonded, HEX);
-                if (lib_aci_is_discovery_finished(&aci_state) && (ACI_BOND_STATUS_SUCCESS != aci_state.bonded)) {
-                    debug_println(F("Upgrading security!"));
+               if (lib_aci_is_discovery_finished(&aci_state) && (ACI_BOND_STATUS_SUCCESS != aci_state.bonded)) {
+                    debug_println(F("Upgrading security! From Event Connected - never seen this called"));
                     lib_aci_bond_request();
                 }
                 break;
                 
             case ACI_EVT_BOND_STATUS:
                 debug_print(F("Evt Bond Status: "));
-                debug_println(aci_evt->params.bond_status.status_code);
+                debug_println(aci_evt->params.bond_status.status_code, HEX);
                 aci_state.bonded = aci_evt->params.bond_status.status_code;
                 
                 break;
@@ -649,20 +686,7 @@ void Notif::ReadNotifications()
                 
                 PipeStatus( aci_evt);
                 break;
-             /*
-            case ACI_EVT_TIMING:
-                debug_println(F("Evt link connection interval changed"));
-                //Disconnect as soon as we are bonded and required pipes are available
-                //This is used to store the bonding info on disconnect and then re-connect to verify the bond
-                
-                if((ACI_BOND_STATUS_SUCCESS == aci_state.bonded) &&
-                   (true == bonded_first_time) &&
-                   (GAP_PPCP_MAX_CONN_INT >= aci_state.connection_interval) &&
-                   (GAP_PPCP_MIN_CONN_INT <= aci_state.connection_interval)) {
-                    lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
-                }
-                break;
-                */
+
             case ACI_EVT_DISCONNECTED:
                 Disconnected(aci_evt);
                 break;
@@ -802,6 +826,7 @@ Notif::Notif(uint8_t rqPin, uint8_t rdPin) {
     notification_callback_handle = NULL;
     connect_callback_handle = NULL;
     disconnect_callback_handle = NULL;
+    reset_callback_handle = NULL;
     bonded_first_time = true;
     setup_required = false;
     timing_change_done = false;

@@ -74,23 +74,23 @@
         <Name>Notif</Name>
         <DeviceNameWriteLength>0</DeviceNameWriteLength>
         <LocalPipeOnDeviceName>false</LocalPipeOnDeviceName>
-        <DeviceNameShortLength>0</DeviceNameShortLength>
+        <DeviceNameShortLength>4</DeviceNameShortLength>
         <Apperance>0240</Apperance>
         <SecurityLevel>1</SecurityLevel>
         <AuthenticationReq>0</AuthenticationReq>
         <IoCapabilities>0</IoCapabilities>
         <BondTimeout>600</BondTimeout>
-        <SecurityRequestDelay>0</SecurityRequestDelay>
+        <SecurityRequestDelay>10</SecurityRequestDelay>
         <MinimumKeySize>7</MinimumKeySize>
         <MaximumKeySize>16</MaximumKeySize>
-        <AdvertisingDataBondedBitmap>10</AdvertisingDataBondedBitmap>
-        <AdvertisingDataGeneralBitmap>5a</AdvertisingDataGeneralBitmap>
+        <AdvertisingDataBondedBitmap>c10</AdvertisingDataBondedBitmap>
+        <AdvertisingDataGeneralBitmap>c10</AdvertisingDataGeneralBitmap>
         <AdvertisingDataBrodcastBitmap>0</AdvertisingDataBrodcastBitmap>
-        <AdvertisingDataBondedScanResponseBitmap>2c50</AdvertisingDataBondedScanResponseBitmap>
-        <AdvertisingDataGeneralScanResponseBitmap>2c40</AdvertisingDataGeneralScanResponseBitmap>
+        <AdvertisingDataBondedScanResponseBitmap>2c10</AdvertisingDataBondedScanResponseBitmap>
+        <AdvertisingDataGeneralScanResponseBitmap>2c10</AdvertisingDataGeneralScanResponseBitmap>
         <AdvertisingDataBrodcastScanResponseBitmap>0</AdvertisingDataBrodcastScanResponseBitmap>
-        <AdvertisingDataBondedBitmapCustom>1</AdvertisingDataBondedBitmapCustom>
-        <AdvertisingDataGeneralBitmapCustom>1</AdvertisingDataGeneralBitmapCustom>
+        <AdvertisingDataBondedBitmapCustom>0</AdvertisingDataBondedBitmapCustom>
+        <AdvertisingDataGeneralBitmapCustom>0</AdvertisingDataGeneralBitmapCustom>
         <AdvertisingDataBrodcastBitmapCustom>0</AdvertisingDataBrodcastBitmapCustom>
         <AdvertisingDataBondedScanResponseBitmapCustom>0</AdvertisingDataBondedScanResponseBitmapCustom>
         <AdvertisingDataGeneralScanResponseBitmapCustom>0</AdvertisingDataGeneralScanResponseBitmapCustom>
@@ -108,7 +108,7 @@
         <CustomAdTypes>
             <AdType index="1">
                 <Type>19</Type>
-                <Value>4002</Value>
+                <Value></Value>
             </AdType>
             <AdType index="2">
                 <Type>18</Type>

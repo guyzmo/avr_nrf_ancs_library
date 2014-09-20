@@ -116,6 +116,15 @@ void ancs_disconnected() {
     connected = false;
 }
 
+void ancs_reset() {
+    connected = false;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print(" Bond Cleared ");
+    lcd.setCursor(0,1);
+    lcd.print("Please Reset");
+}
+
 void ancs_notifications(ancs_notification_t* notif) {
     
     
@@ -213,6 +222,7 @@ void setup(void)
     notif.set_notification_callback_handle(ancs_notifications);
     notif.set_connect_callback_handle(ancs_connected);
     notif.set_disconnect_callback_handle(ancs_disconnected);
+    notif.set_reset_callback_handle(ancs_reset);
     lcd.begin(LCD_SIZE, 2);
     digitalWrite( LCD_BACKLIGHT_PIN, HIGH );  //backlight control pin D3 is high (on)
     pinMode( LCD_BACKLIGHT_PIN, OUTPUT );     //D3 is an output
