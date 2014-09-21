@@ -99,6 +99,16 @@ Unpairing
 --
 You can break the Pairing on the iOS device go into `Settings`, then `Bluetooth` and then click on the `i` next to `Notif`. It will bring you to a screen with an option to `Forget This Device`. After doing this on the iOS side, you may need to reset the Arduino before it will forget its pairing information and allow for a new pairing.
 
+BluefruitLE Breakout Board
+--
+If you are using the Breakout board from Adafruit you need to modify notif.cc and let it know what pins you are using for Reset and Interupt. Goto Line ~800 of notif.cc and edit appropriately:
+
+    aci_state.aci_pins.reset_pin              = 9; // was UNUSED
+    aci_state.aci_pins.active_pin             = UNUSED;
+    aci_state.aci_pins.optional_chip_sel_pin  = UNUSED;
+    
+    aci_state.aci_pins.interface_is_interrupt = true; // was false
+    aci_state.aci_pins.interrupt_number       = 1; // (on the Micro/Leo, pin2 is int1) was UNUSED
 
 LICENSES
 --
