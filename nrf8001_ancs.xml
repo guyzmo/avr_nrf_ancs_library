@@ -8,10 +8,9 @@
         <Uuid BaseUUID="79050000B5CE4E99A40F4B1E122D00D0" BaseUUIDName="ANCS">f431</Uuid>
         <Characteristic>
             <Name>Notification Source</Name>
-            <Uuid BaseUUID="9fbf0000630142d98c5825e699A21DBD" BaseUUIDName="ANCS Notification Source">120d</Uuid>
+            <Uuid BaseUUID="9FBF0000630142D98C5825E699A21DBD" BaseUUIDName="ANCS Notification Source">120d</Uuid>
             <DefaultValue></DefaultValue>
             <UsePresentationFormat>0</UsePresentationFormat>
-            <UserDescription></UserDescription>
             <MaxDataLength>1</MaxDataLength>
             <AttributeLenType>1</AttributeLenType>
             <ForceOpen>false</ForceOpen>
@@ -33,7 +32,6 @@
             <Uuid BaseUUID="22EA000024D64BB5BE44B36ACE7C7BFB" BaseUUIDName="ANCS Data Source">c6e9</Uuid>
             <DefaultValue></DefaultValue>
             <UsePresentationFormat>0</UsePresentationFormat>
-            <UserDescription></UserDescription>
             <MaxDataLength>60</MaxDataLength>
             <AttributeLenType>1</AttributeLenType>
             <ForceOpen>false</ForceOpen>
@@ -55,7 +53,6 @@
             <Uuid BaseUUID="69D1000045E149A898219BBDFDAAD9D9" BaseUUIDName="ANCS Control Point">d8f3</Uuid>
             <DefaultValue></DefaultValue>
             <UsePresentationFormat>0</UsePresentationFormat>
-            <UserDescription></UserDescription>
             <MaxDataLength>1</MaxDataLength>
             <AttributeLenType>1</AttributeLenType>
             <ForceOpen>false</ForceOpen>
@@ -73,102 +70,24 @@
             <PeriodForProperties/>
         </Characteristic>
     </Service>
-    <Service Type="local" PrimaryService="true">
-        <Name>TX Power</Name>
-        <Uuid>1804</Uuid>
-        <Characteristic>
-            <Name>TX Power Level</Name>
-            <Uuid>2a07</Uuid>
-            <DefaultValue>0</DefaultValue>
-            <UsePresentationFormat>0</UsePresentationFormat>
-            <UserDescription></UserDescription>
-            <MaxDataLength>1</MaxDataLength>
-            <AttributeLenType>1</AttributeLenType>
-            <ForceOpen>false</ForceOpen>
-            <Properties>
-                <WriteWithoutResponse>false</WriteWithoutResponse>
-                <Write>false</Write>
-                <Notify>false</Notify>
-                <Indicate>false</Indicate>
-                <Broadcast>false</Broadcast>
-            </Properties>
-            <SetPipe>true</SetPipe>
-            <AckIsAuto>true</AckIsAuto>
-            <PresentationFormatDescriptor Value="0000" Exponent="0" Format="1" NameSpace="01" Unit="0000"/>
-            <PeriodForReadingThisCharacteristic>0</PeriodForReadingThisCharacteristic>
-            <PeriodForProperties/>
-        </Characteristic>
-    </Service>
-    <Service Type="local" PrimaryService="true">
-        <Name>Battery</Name>
-        <Uuid>180f</Uuid>
-        <Characteristic>
-            <Name>Battery Level</Name>
-            <Uuid>2a19</Uuid>
-            <DefaultValue>64</DefaultValue>
-            <UsePresentationFormat>0</UsePresentationFormat>
-            <UserDescription></UserDescription>
-            <MaxDataLength>1</MaxDataLength>
-            <AttributeLenType>1</AttributeLenType>
-            <ForceOpen>false</ForceOpen>
-            <Properties>
-                <WriteWithoutResponse>false</WriteWithoutResponse>
-                <Write>false</Write>
-                <Notify>true</Notify>
-                <Indicate>false</Indicate>
-                <Broadcast>false</Broadcast>
-            </Properties>
-            <SetPipe>true</SetPipe>
-            <AckIsAuto>false</AckIsAuto>
-            <PresentationFormatDescriptor Value="0000" Exponent="0" Format="4" NameSpace="01" Unit="27AD"/>
-            <PeriodForReadingThisCharacteristic>0</PeriodForReadingThisCharacteristic>
-            <PeriodForProperties/>
-        </Characteristic>
-    </Service>
-    <Service Type="local" PrimaryService="true">
-        <Name>Device Information</Name>
-        <Uuid>180a</Uuid>
-        <Characteristic>
-            <Name>Hardware Revision String</Name>
-            <Uuid>2a27</Uuid>
-            <DefaultValue>Ko&amp;Co 0.1</DefaultValue>
-            <UsePresentationFormat>1</UsePresentationFormat>
-            <UserDescription></UserDescription>
-            <MaxDataLength>9</MaxDataLength>
-            <AttributeLenType>2</AttributeLenType>
-            <ForceOpen>false</ForceOpen>
-            <Properties>
-                <WriteWithoutResponse>false</WriteWithoutResponse>
-                <Write>false</Write>
-                <Notify>false</Notify>
-                <Indicate>false</Indicate>
-                <Broadcast>false</Broadcast>
-            </Properties>
-            <SetPipe>true</SetPipe>
-            <AckIsAuto>false</AckIsAuto>
-            <PresentationFormatDescriptor Value="0000" Exponent="0" Format="25" NameSpace="01" Unit="0000"/>
-            <PeriodForReadingThisCharacteristic>0</PeriodForReadingThisCharacteristic>
-            <PeriodForProperties/>
-        </Characteristic>
-    </Service>
     <Gapsettings>
         <Name>Notif</Name>
         <DeviceNameWriteLength>0</DeviceNameWriteLength>
         <LocalPipeOnDeviceName>false</LocalPipeOnDeviceName>
-        <DeviceNameShortLength>0</DeviceNameShortLength>
+        <DeviceNameShortLength>4</DeviceNameShortLength>
         <Apperance>0240</Apperance>
         <SecurityLevel>1</SecurityLevel>
-        <AuthenticationReq>1</AuthenticationReq>
-        <IoCapabilities>1</IoCapabilities>
+        <AuthenticationReq>0</AuthenticationReq>
+        <IoCapabilities>0</IoCapabilities>
         <BondTimeout>600</BondTimeout>
-        <SecurityRequestDelay>99</SecurityRequestDelay>
+        <SecurityRequestDelay>10</SecurityRequestDelay>
         <MinimumKeySize>7</MinimumKeySize>
         <MaximumKeySize>16</MaximumKeySize>
-        <AdvertisingDataBondedBitmap>c5a</AdvertisingDataBondedBitmap>
-        <AdvertisingDataGeneralBitmap>5a</AdvertisingDataGeneralBitmap>
+        <AdvertisingDataBondedBitmap>c10</AdvertisingDataBondedBitmap>
+        <AdvertisingDataGeneralBitmap>c10</AdvertisingDataGeneralBitmap>
         <AdvertisingDataBrodcastBitmap>0</AdvertisingDataBrodcastBitmap>
-        <AdvertisingDataBondedScanResponseBitmap>2d4f</AdvertisingDataBondedScanResponseBitmap>
-        <AdvertisingDataGeneralScanResponseBitmap>2d4f</AdvertisingDataGeneralScanResponseBitmap>
+        <AdvertisingDataBondedScanResponseBitmap>2c10</AdvertisingDataBondedScanResponseBitmap>
+        <AdvertisingDataGeneralScanResponseBitmap>2c10</AdvertisingDataGeneralScanResponseBitmap>
         <AdvertisingDataBrodcastScanResponseBitmap>0</AdvertisingDataBrodcastScanResponseBitmap>
         <AdvertisingDataBondedBitmapCustom>0</AdvertisingDataBondedBitmapCustom>
         <AdvertisingDataGeneralBitmapCustom>0</AdvertisingDataGeneralBitmapCustom>
@@ -181,13 +100,15 @@
         <MaximumConnectionInterval>800</MaximumConnectionInterval>
         <SlaveLatency>0</SlaveLatency>
         <TimeoutMultipler>600</TimeoutMultipler>
+        <AddServiceUpdateCharacteristic>true</AddServiceUpdateCharacteristic>
+        <AddServiceUpdateCharacteristicPipe>true</AddServiceUpdateCharacteristicPipe>
         <SercieToSolicitate>
             <Uuid BaseUUID="79050000B5CE4E99A40F4B1E122D00D0" BaseUUIDName="ANCS">f431</Uuid>
         </SercieToSolicitate>
         <CustomAdTypes>
             <AdType index="1">
                 <Type>19</Type>
-                <Value>4002</Value>
+                <Value></Value>
             </AdType>
             <AdType index="2">
                 <Type>18</Type>

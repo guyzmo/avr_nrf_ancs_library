@@ -1,25 +1,27 @@
 
+#include "../BLE/lib_aci.h"
 #include <inttypes.h>
-
 #include <services.h>
-#include "lib_aci.h"
+
 
 #define PACK_LITTLE_ENDIAN
-#include "data_lib/pack_lib.h"
-#include "data_lib/utilities.h"
-#include "data_lib/linked_list.h"
+#include "pack_lib.h"
+#include "utilities.h"
+#include "linked_list.h"
 
 #include "ancs_base.h"
 #include "ancs_notification_source.h"
 #include "ancs_notification_list.h"
 
 boolean command_send_enable = true;
+unsigned long last_command_send = 0;
 
 static linked_list_t* buffer_commands;
 static bool ancs_updated = true;
 
 bool ancs_send_buffered_command() {
-    if (!command_send_enable) {
+
+    if (!command_send_enable && ((millis() - last_command_send) < 1000)) {
         return true;
     }
     uint8_t* buffer;
@@ -37,18 +39,27 @@ bool ancs_send_buffered_command() {
     debug_print(F(" attribute 0x"));
     debug_print(aid, HEX);
     debug_println();
-    command_send_enable = false;
-    lib_aci_send_data(PIPE_ANCS_CONTROL_POINT_TX_ACK, buffer, len);
+    
+    if (lib_aci_send_data(PIPE_ANCS_CONTROL_POINT_TX_ACK, buffer, len)) {
+      command_send_enable = false;
+      last_command_send = millis();
+    } else {
+        Serial.print(F("!! Error sending data for notification #"));
+        Serial.println(uid, DEC);
+    }
     free(buffer);
     return true;
 }
 
 void ancs_run() {
+
+    
     if (ancs_send_buffered_command()) {
+        
         ancs_updated = false;
     } else if (!ancs_updated) {
         ancs_updated = true;
-        ancs_notification_list_apply(&ancs_notifications_use_hook);
+        //ancs_notification_list_apply(&ancs_notifications_use_hook);
         free_ram();
     }
 }
@@ -59,12 +70,18 @@ void ancs_init() {
 }
 
 void ancs_get_notification_data(uint32_t uid) {
-    Serial.println(F("[ANCS NS] ancs_get_notification_data("));
+    if (command_send_enable || ((millis() - last_command_send) > 1000)) {
+    Serial.print(F("[ANCS NS] ancs_get_notification_data("));
     Serial.print(uid, DEC);
     Serial.println(F(")"));
     debug2_print(F("[ANCS NS] Buffering commands to get details for notification #"));
     debug2_println(uid, DEC);
+    
+
+    
     uint8_t* buffer;
+    
+    #ifdef ANCS_USE_APP
     buffer = (uint8_t*)malloc(6);
     // 
     pack(buffer, "BIB", ANCS_COMMAND_GET_NOTIF_ATTRIBUTES, uid,
@@ -72,6 +89,7 @@ void ancs_get_notification_data(uint32_t uid) {
     
     fifo_push(buffer_commands, buffer, 6);
     free(buffer);
+#endif
     //
     buffer = (uint8_t*)malloc(8);
     pack(buffer, "BIBH", ANCS_COMMAND_GET_NOTIF_ATTRIBUTES, uid,
@@ -91,21 +109,32 @@ void ancs_get_notification_data(uint32_t uid) {
     fifo_push(buffer_commands, buffer, 6);
     free(buffer);
     //
+    #ifdef ANCS_USE_SUBTITLE
     buffer = (uint8_t*)malloc(8);
     pack(buffer, "BIBB", ANCS_COMMAND_GET_NOTIF_ATTRIBUTES, uid,
                          ANCS_NOTIFICATION_ATTRIBUTE_SUBTITLE,
                          ANCS_NOTIFICATION_ATTRIBUTE_DATA_SIZE);
     fifo_push(buffer_commands, buffer, 8);
     free(buffer);
+#endif
     //
     buffer = (uint8_t*)malloc(8);
     pack(buffer, "BIBH", ANCS_COMMAND_GET_NOTIF_ATTRIBUTES, uid,
                          ANCS_NOTIFICATION_ATTRIBUTE_MESSAGE,
-                         ANCS_NOTIFICATION_ATTRIBUTE_DATA_SIZE);
+                         MESSAGE_SIZE);
     fifo_push(buffer_commands, buffer, 8);
     free(buffer);
     free_ram();
     debug_println(F("[ANCS NS]	ancs_get_notification_data(): end"));
+    debug_print(F("[ANCS NS]	Command Send Enable: "));
+    debug_println(command_send_enable);
+     } else {
+         Serial.print(F("[ANCS NS] ancs_get_notification_data("));
+         Serial.print(uid, DEC);
+         Serial.print(F(") - Need Command Send - "));
+         Serial.println(millis() - last_command_send);
+     }
+    
 }
 
 void ancs_notification_source_parser(const uint8_t* buffer) {
@@ -134,16 +163,16 @@ void ancs_notification_source_parser(const uint8_t* buffer) {
     notif->action = event_id;
 
     if (event_flags != 0) {
-        debug_println(F("FLAGS: "));
+        Serial.print(F("FLAGS: "));
         if ((event_flags & ANCS_EVT_FLAG_SILENT) == ANCS_EVT_FLAG_SILENT)
-            debug_println(F("SILENT "));
+            Serial.print(F("SILENT "));
         if ((event_flags & ANCS_EVT_FLAG_IMPORTANT) == ANCS_EVT_FLAG_IMPORTANT)
-            debug_println(F("IMPORTANT "));
+            Serial.print(F("IMPORTANT "));
         debug_println(F("; "));
     } else
         debug_println(F("NO FLAGS; "));
 
-    Serial.println(F("Category: "));
+    Serial.print(F("Category: "));
     switch (category_id) {
         case ANCS_CATEGORY_OTHER:
             Serial.println(F("Other"));
@@ -241,7 +270,9 @@ void ancs_notification_source_parser(const uint8_t* buffer) {
             debug_println(F(": ignored"));
             return;
 #endif
-        default: return;
+        default:
+            Serial.println(F("UNKOWN CATEGORY"));
+            return;
     }
     debug_print(F("["));
     debug_print(category_count);
@@ -250,6 +281,11 @@ void ancs_notification_source_parser(const uint8_t* buffer) {
         case ANCS_EVT_NOTIFICATION_ADDED:
             debug_println(F("ADDED"));
             if (ancs_notification_list_get(nid) == NULL) {
+                
+                ancs_notification_list_push(notif);
+                
+                debug_print(F("Adding notification to cache: "));
+                debug_println(nid);
                 ancs_get_notification_data(nid);
             } else {
                 debug_print(F("Notification already in cache: "));
@@ -262,7 +298,7 @@ void ancs_notification_source_parser(const uint8_t* buffer) {
             break;
         case ANCS_EVT_NOTIFICATION_REMOVED:
             debug_println(F("REMOVED"));
-            ancs_notifications_remove_hook(notif);
+            //ancs_notifications_remove_hook(notif);
             break;
     }
 }

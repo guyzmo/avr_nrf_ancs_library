@@ -9,8 +9,6 @@
 
 #include "ancs_base.h"
 
-#define TITLE_LEN 10
-#define LINE_SIZE 20
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,9 +30,13 @@ typedef struct ancs_notification_t {
     uint16_t msg_len;
     date_t   time;
     char     title[LINE_SIZE+1];
+    #ifdef ANCS_USE_SUBTITLE
     char     subtitle[LINE_SIZE+1];
+#endif
+    #ifdef ANCS_USE_APP
     char     app[LINE_SIZE+1];
-    char     message[LINE_SIZE+1];
+#endif
+    char     message[MESSAGE_SIZE+1];
 } ancs_notification_t;
 
 void ancs_notification_init(ancs_notification_t* n);
